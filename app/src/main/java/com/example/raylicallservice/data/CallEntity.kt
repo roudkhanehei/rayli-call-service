@@ -10,5 +10,15 @@ data class CallEntity(
     val callId: String,
     val phoneNumber: String?,
     val timestamp: Date,
-    val callState: String
+    val callState: String,
+    val duration: Long = 0,
+    val customerName: String? = null,
+    val productsId: String? = null,
+    val description: String? = null,
+    val organization: String? = null,
+    val customerId: String? = null,
+    val simcart: String? = null,
+    val imei: String? = null,
+    val status: String? = null,
+    val callDirection: String = "INCOMING" // Default to INCOMING for backward compatibility
 ) 

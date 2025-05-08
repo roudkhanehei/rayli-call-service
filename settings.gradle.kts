@@ -19,5 +19,13 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "RayLi call service"
+
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+
+    }
+}
+rootProject.name = "Rayli Call Manager"
 include(":app")
