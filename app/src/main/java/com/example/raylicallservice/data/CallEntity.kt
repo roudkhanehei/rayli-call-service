@@ -4,6 +4,16 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import java.util.Date
 
+enum class IssueType(val value: Int) {
+    Order(1),
+    Delivery(2),
+    Payment(3),
+    Shipping(4),
+    OrderReturn(5),
+    Availablity(6),
+    Other(7)
+}
+
 @Entity(tableName = "calls")
 data class CallEntity(
     @PrimaryKey
@@ -18,7 +28,11 @@ data class CallEntity(
     val organization: String? = null,
     val customerId: String? = null,
     val simcart: String? = null,
+    val sim_number: String? = null,
+    val sim_slot: Int = -1,
     val imei: String? = null,
     val status: String? = null,
-    val callDirection: String = "INCOMING" // Default to INCOMING for backward compatibility
+    val callDirection: String = "INCOMING", // Default to INCOMING for backward compatibility
+    val issue: IssueType? = null
 ) 
+

@@ -17,10 +17,162 @@
         android:elevation="4dp"
         android:theme="@style/ThemeOverlay.MaterialComponents.Light"
         app:titleTextColor="@android:color/white"
+        app:title="@string/app_name"
+        app:navigationIcon="@drawable/ic_toolbar"
+        app:navigationIconTint="@android:color/white"
+        app:contentInsetStartWithNavigation="16dp"
+        app:menu="@menu/toolbar_menu"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:title="@string/app_name" />
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/statisticsCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="1dp"
+        app:layout_constraintTop_toBottomOf="@id/toolbar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Add your daily statistics views here -->
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Weekly Calls Chart"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_gravity="center"
+                android:textColor="@color/text_primary"
+                android:layout_marginTop="1dp"
+                android:layout_marginBottom="1dp"/>
+
+            <com.github.mikephil.charting.charts.BarChart
+                android:id="@+id/weeklyCallsChart"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:layout_marginTop="8dp"/>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/statsCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:cardCornerRadius="12dp"
+                app:cardBackgroundColor="@color/light_gray">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="10dp">
+
+
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="8dp"
+                            android:text="Statistics"
+                            android:id="@+id/statisticsText"
+                            android:textColor="@color/text_primary"
+                            android:textSize="18sp"
+                            android:textStyle="bold" />
+                 
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:weightSum="3">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:gravity="center">
+
+                            <TextView
+                                android:id="@+id/totalResponsedCallsText"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textSize="24sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/success"/>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Responsed"
+                                android:textSize="14sp"
+                                android:textColor="@color/text_secondary"/>
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:gravity="center">
+
+                            <TextView
+                                android:id="@+id/missedCallsText"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textSize="24sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/error"/>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Missed"
+                                android:textSize="14sp"
+                                android:textColor="@color/text_secondary"/>
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:gravity="center">
+
+                            <TextView
+                                android:id="@+id/answeredCallsText"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textSize="24sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/colorPrimary"/>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Outgoing"
+                                android:textSize="14sp"
+                                android:textColor="@color/text_secondary"/>
+                        </LinearLayout>
+
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/callsRecyclerView"
@@ -31,6 +183,37 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/toolbar" />
+        app:layout_constraintTop_toBottomOf="@id/statisticsCard" />
+
+    <LinearLayout
+        android:id="@+id/emptyStateContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/statisticsCard">
+
+        <ImageView
+            android:id="@+id/emptyStateImage"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:src="@drawable/ic_empty_state"
+            android:layout_marginBottom="16dp"
+            android:contentDescription="Empty state illustration" />
+
+        <TextView
+            android:id="@+id/emptyStateText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="No calls exist"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:gravity="center" />
+
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

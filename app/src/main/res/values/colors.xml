@@ -1,14 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Base colors -->
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="white">#FFFFFF</color>
 
     <!-- Primary colors -->
-    <color name="primary">#2196F3</color>
-    <color name="primary_dark">#1976D2</color>
-    <color name="primary_light">#BBDEFB</color>
-    <color name="accent">#FF4081</color>
+    <color name="colorPrimary">#2196F3</color>
+    <color name="colorPrimaryDark">#1976D2</color>
+    <color name="colorAccent">#03A9F4</color>
 
     <!-- Text colors -->
     <color name="text_primary">#212121</color>
@@ -24,4 +23,8 @@
     <color name="success">#4CAF50</color>
     <color name="warning">#FFC107</color>
     <color name="info">#2196F3</color>
+
+    <!-- Additional colors -->
+    <color name="gray">#757575</color>
+    <color name="light_gray">#F5F5F5</color>
 </resources>

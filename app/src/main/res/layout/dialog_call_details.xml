@@ -70,10 +70,32 @@
             android:id="@+id/dialogOrganization"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="text"
-            android:background="@android:drawable/editbox_background"
+  android:background="@android:drawable/editbox_background"
             android:padding="8dp"
-            android:layout_marginBottom="16dp"/>
+            android:layout_marginBottom="8dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Issue Type"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#333333"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="8dp"/>
+
+        <Spinner
+            android:id="@+id/dialogIssueSpinner"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/spinner_background"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:spinnerMode="dropdown"
+            android:layout_marginBottom="8dp"
+            android:minHeight="56dp"
+            android:elevation="2dp"/>
 
         <TextView
             android:layout_width="match_parent"
@@ -115,7 +137,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="end">
+            android:gravity="start">
 
             <Button
                 android:id="@+id/dialogSaveButton"

@@ -15,6 +15,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.example.raylicallservice.R
 import com.example.raylicallservice.data.CallEntity
+import com.example.raylicallservice.data.IssueType
 import java.text.SimpleDateFormat
 import java.util.Locale
 import kotlinx.coroutines.CoroutineScope
@@ -23,15 +24,19 @@ import android.widget.EditText
 import com.example.raylicallservice.data.AppDatabase
 import kotlinx.coroutines.launch
 import android.widget.Spinner
+import android.widget.ArrayAdapter
 
 
 
 class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
     private var calls: List<CallEntity> = emptyList()
+    private var filteredCalls: List<CallEntity> = emptyList()
+    private var currentFilter: String? = null
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
     private var expandedPosition = -1
 
     class CallViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        
         val phoneNumberText: TextView = view.findViewById(R.id.phoneNumberText)
         val timestampText: TextView = view.findViewById(R.id.timestampText)
         val durationText: TextView = view.findViewById(R.id.durationText)
@@ -56,7 +61,7 @@ class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
     }
 
     override fun onBindViewHolder(holder: CallViewHolder, position: Int) {
-        val call = calls[position]
+        val call = filteredCalls[position]
         holder.phoneNumberText.text = call.phoneNumber ?: "Unknown Number"
         holder.timestampText.text = dateFormat.format(call.timestamp)
         holder.durationText.text = formatDuration(call.duration)
@@ -98,6 +103,12 @@ class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
             expandedPosition = if (isExpanded) -1 else position
             notifyItemChanged(previousExpanded)
             notifyItemChanged(expandedPosition)
+        }
+
+        // Set long click listener for delete functionality
+        holder.mainContent.setOnLongClickListener {
+            showDeleteConfirmationDialog(holder.itemView.context, call)
+            true
         }
 
         // Set up button click listeners
@@ -169,6 +180,23 @@ class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
         val organizationEditText = dialogView.findViewById<EditText>(R.id.dialogOrganization)
         organizationEditText.setText(call.organization ?: "")
 
+        val issueSpinner = dialogView.findViewById<Spinner>(R.id.dialogIssueSpinner)
+        val issueAdapter = ArrayAdapter(
+            context,
+            R.layout.spinner_item,
+            IssueType.values()
+        )
+        issueAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
+        issueSpinner.adapter = issueAdapter
+        
+        // Set the current issue if it exists
+        call.issue?.let { currentIssue ->
+            val position = IssueType.values().indexOf(currentIssue)
+            if (position != -1) {
+                issueSpinner.setSelection(position)
+            }
+        }
+
         val dialog = AlertDialog.Builder(context, R.style.CustomDialog)
             .setView(dialogView)
             .create()
@@ -178,15 +206,16 @@ class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
         }
 
         dialogView.findViewById<View>(R.id.dialogSaveButton).setOnClickListener {
-
             val newDescription = descriptionEditText.text.toString()
             val newCustomerName = customerNameEditText.text.toString()
-            val newOrganization = organizationEditText.text.toString()  
+            val newOrganization = organizationEditText.text.toString()
+            val selectedIssue = issueSpinner.selectedItem as IssueType
 
             val updatedCall = call.copy(
-                 customerName = newCustomerName,
+                customerName = newCustomerName,
                 organization = newOrganization,
-                description = newDescription
+                description = newDescription,
+                issue = selectedIssue
             )
             
             // Update the call in the database
@@ -202,7 +231,7 @@ class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
     }
 
     private fun showWhatsAppNotInstalledDialog(context: Context) {
-        AlertDialog.Builder(context)
+        val dialog = AlertDialog.Builder(context, R.style.CustomDialog)
             .setTitle("WhatsApp Not Installed")
             .setMessage("WhatsApp is not installed on your device. Would you like to install it?")
             .setPositiveButton("Install") { _, _ ->
@@ -218,11 +247,14 @@ class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
                 }
             }
             .setNegativeButton("Cancel", null)
-            .show()
+            .create()
+        
+        dialog.window?.setBackgroundDrawableResource(R.drawable.dialog_background)
+        dialog.show()
     }
 
     private fun showTelegramNotInstalledDialog(context: Context) {
-        AlertDialog.Builder(context)
+        val dialog = AlertDialog.Builder(context, R.style.CustomDialog)
             .setTitle("Telegram Not Installed")
             .setMessage("Telegram is not installed on your device. Would you like to install it?")
             .setPositiveButton("Install") { _, _ ->
@@ -238,13 +270,55 @@ class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
                 }
             }
             .setNegativeButton("Cancel", null)
-            .show()
+            .create()
+        
+        dialog.window?.setBackgroundDrawableResource(R.drawable.dialog_background)
+        dialog.show()
     }
 
-    override fun getItemCount() = calls.size
+    private fun showDeleteConfirmationDialog(context: Context, call: CallEntity) {
+        val dialog = AlertDialog.Builder(context, R.style.CustomDialog)
+            .setTitle("Delete Call")
+            .setMessage("Are you sure you want to delete this call record?")
+            .setPositiveButton("Delete") { _, _ ->
+                CoroutineScope(Dispatchers.IO).launch {
+                    val database = AppDatabase.getDatabase(context)
+                    database.callDao().deleteCall(call)
+                    
+                    // Send broadcast to update the chart
+                    val intent = Intent("CALL_STATE_CHANGED").apply {
+                        addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES)
+                        setPackage(context.packageName)
+                    }
+                    context.sendBroadcast(intent)
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .create()
+        
+        dialog.window?.setBackgroundDrawableResource(R.drawable.dialog_background)
+        dialog.show()
+    }
+
+    override fun getItemCount() = filteredCalls.size
 
     fun updateCalls(newCalls: List<CallEntity>) {
         calls = newCalls
+        filteredCalls = if (currentFilter == null) {
+            calls
+        } else {
+            calls.filter { it.callState == currentFilter }
+        }
+        notifyDataSetChanged()
+    }
+
+    fun filterByCallState(state: String?) {
+        currentFilter = state
+        filteredCalls = if (state == null) {
+            calls
+        } else {
+            calls.filter { it.callState == state }
+        }
         notifyDataSetChanged()
     }
 

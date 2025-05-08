@@ -6,10 +6,15 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 
-@Database(entities = [CallEntity::class], version = 1)
+@Database(
+    entities = [CallEntity::class, ProductEntity::class],
+    version = 2,
+    exportSchema = false
+)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun callDao(): CallDao
+    abstract fun productDao(): ProductDao
 
     companion object {
         @Volatile
@@ -20,8 +25,10 @@ abstract class AppDatabase : RoomDatabase() {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "call_database"
-                ).build()
+                    "app_database"
+                )
+                .fallbackToDestructiveMigration()
+                .build()
                 INSTANCE = instance
                 instance
             }

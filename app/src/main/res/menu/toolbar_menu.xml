@@ -9,4 +9,28 @@
         app:actionViewClass="androidx.appcompat.widget.SearchView"
         app:showAsAction="ifRoom|collapseActionView" />
         
+    <item
+        android:id="@+id/action_filter"
+        android:icon="@drawable/ic_filter"
+        android:title="Filter"
+        app:showAsAction="always">
+        
+        <menu>
+            <item
+                android:id="@+id/filter_all"
+                android:title="All Calls" />
+            <item
+                android:id="@+id/filter_missed"
+                android:title="Missed Calls" />
+            <item
+                android:id="@+id/filter_answered"
+                android:title="Answered Calls" />
+            <item
+                android:id="@+id/filter_outgoing"
+                android:title="Outgoing Calls" />
+            <item
+                android:id="@+id/filter_incoming"
+                android:title="Incoming Calls" />
+        </menu>
+    </item>
 </menu> 

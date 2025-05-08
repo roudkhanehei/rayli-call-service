@@ -23,10 +23,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import android.provider.Settings
 import android.telephony.SubscriptionManager
+import android.telephony.SubscriptionInfo
 import android.provider.ContactsContract
 import android.content.ContentResolver
 import android.net.Uri
 import android.widget.Toast
+import android.Manifest
+import androidx.core.app.ActivityCompat
+import android.content.pm.PackageManager
+
 
 class IncomingCallService : Service() {
     private var telephonyManager: TelephonyManager? = null
@@ -38,6 +43,8 @@ class IncomingCallService : Service() {
     private val serviceScope = CoroutineScope(Dispatchers.IO)
     private var current_imei: String? = null
     private var current_simcart: String? = null
+    private var current_sim_number: String? = null
+    private var current_sim_slot: Int = -1
     
     // Call state tracking
     private var wasCallRinging = false
@@ -45,6 +52,7 @@ class IncomingCallService : Service() {
     private var callStartTime: Long = 0
     private var callEndTime: Long = 0
     private var isOutgoingCall = false
+    private var currentCallSimInfo: Triple<String?, String?, Int>? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -53,7 +61,8 @@ class IncomingCallService : Service() {
         startForeground()
         database = AppDatabase.getDatabase(applicationContext)
         getDeviceImei()
-        getCurrentSimCard()
+     
+       
     }
 
     private fun createNotificationChannel() {
@@ -138,6 +147,59 @@ class IncomingCallService : Service() {
         return contactName
     }
 
+
+    private fun getCurrentCallSimInfo(): Triple<String?, String?, Int> {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val subscriptionManager = getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
+                val activeSubscriptionInfoList = subscriptionManager.activeSubscriptionInfoList
+
+                if (activeSubscriptionInfoList != null && activeSubscriptionInfoList.isNotEmpty()) {
+                    // Log all available SIM cards
+                    activeSubscriptionInfoList.forEach { simInfo ->
+                        Log.e("SIM_DETAILS", "SIM Card - " +
+                                "Slot: ${simInfo.simSlotIndex}, " +
+                                "Carrier: ${simInfo.carrierName}, " +
+                                "SubId: ${simInfo.subscriptionId}, " +
+                                "Display Name: ${simInfo.displayName}")
+                    }
+
+                    // Try to get the active subscription for the current call
+                    var activeSim: SubscriptionInfo? = null
+                    
+                    // First try SIM 2 (slot index 1)
+                    activeSim = subscriptionManager.getActiveSubscriptionInfoForSimSlotIndex(1)
+                    if (activeSim == null) {
+                        // If SIM 2 is not active, try SIM 1 (slot index 0)
+                        activeSim = subscriptionManager.getActiveSubscriptionInfoForSimSlotIndex(0)
+                    }
+
+                    // If we still don't have an active SIM, use the first available one
+                    if (activeSim == null && activeSubscriptionInfoList.isNotEmpty()) {
+                        activeSim = activeSubscriptionInfoList[0]
+                    }
+
+                    if (activeSim != null) {
+                        Log.e("CURRENT_CALL_SIM", "Active Call SIM - " +
+                                "Slot: ${activeSim.simSlotIndex}, " +
+                                "Carrier: ${activeSim.carrierName}, " +
+                                "SubId: ${activeSim.subscriptionId}, " +
+                                "Display Name: ${activeSim.displayName}")
+
+                        return Triple(
+                            activeSim.carrierName?.toString(),
+                            activeSim.iccId,
+                            activeSim.simSlotIndex
+                        )
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("IncomingCallService", "Error getting current call SIM info: ${e.message}")
+        }
+        return Triple(null, null, -1)
+    }
+
     private fun handleIncomingCall(phoneNumber: String?) {
         isOutgoingCall = false
         val dateFormat = SimpleDateFormat("yyyyMMddHHmmssSSSSSS", Locale.getDefault())
@@ -150,13 +212,20 @@ class IncomingCallService : Service() {
         // Get contact name if available
         val contactName = getContactName(phoneNumber)
         
+        // Get current call SIM info
+        currentCallSimInfo = getCurrentCallSimInfo()
+        val (simCarrier, simIccId, simSlot) = currentCallSimInfo ?: Triple(null, null, -1)
+        
         val callEntity = CallEntity(
             callId = callId,
             phoneNumber = phoneNumber,
             timestamp = currentTime,
             callState = "RINGING",
             callDirection = "INCOMING",
-            customerName = contactName
+            customerName = contactName,
+            simcart = simCarrier,
+            sim_number = simIccId,
+            sim_slot = simSlot
         )
         
         serviceScope.launch {
@@ -165,8 +234,7 @@ class IncomingCallService : Service() {
             }
         }
         
-        //showNotification("Call Incoming", "Incoming call from ${contactName ?: phoneNumber}")
-        Log.d("IncomingCall", "Call ID: $callId, Time: $formattedTime, Number: $phoneNumber, Name: $contactName")
+        Log.d("IncomingCall", "Call ID: $callId, Time: $formattedTime, Number: $phoneNumber, Name: $contactName, SIM: $simCarrier, SIM Number: $simIccId, SIM Slot: $simSlot")
     }
 
     private fun handleOutgoingCall(phoneNumber: String?) {
@@ -181,6 +249,9 @@ class IncomingCallService : Service() {
         // Get contact name if available
         val contactName = getContactName(phoneNumber)
         
+        // Get current call SIM info
+        currentCallSimInfo = getCurrentCallSimInfo()
+        val (simCarrier, simIccId, simSlot) = currentCallSimInfo ?: Triple(null, null, -1)
         
         val callEntity = CallEntity(
             callId = callId,
@@ -188,10 +259,12 @@ class IncomingCallService : Service() {
             timestamp = currentTime,
             callState = "DIALING",
             callDirection = "OUTGOING",
-            customerName = contactName
+            customerName = contactName,
+            simcart = simCarrier,
+            sim_number = simIccId,
+            sim_slot = simSlot
         )
-        
-    }
+        }
 
     private fun calculateCallDuration(): Long {
         return if (callStartTime > 0 && callEndTime > 0) {
@@ -202,6 +275,10 @@ class IncomingCallService : Service() {
     }
 
     private fun handleCallStateChange(phoneNumber: String?, state: String) {
+        // Get current call SIM info
+        currentCallSimInfo = getCurrentCallSimInfo()
+        val (simCarrier, simIccId, simSlot) = currentCallSimInfo ?: Triple(null, null, -1)
+        
         val dateFormat = SimpleDateFormat("yyyyMMddHHmmssSSSSSS", Locale.getDefault())
         val _currentTime = Date()
         val timestampString = dateFormat.format(_currentTime)
@@ -226,24 +303,45 @@ class IncomingCallService : Service() {
             callState = state,
             duration = duration,
             imei = current_imei,
-            simcart = current_simcart,
+            simcart = simCarrier,
+            sim_number = simIccId,
+            sim_slot = simSlot,
             callDirection = if (isOutgoingCall) "OUTGOING" else "INCOMING",
             customerName = contactName
         )
 
         if(phoneNumber != null) {
             serviceScope.launch {
-                if(phoneNumber != "") {
-                    database.callDao().insertCall(callEntity)
+                try {
+                    if(phoneNumber != "") {
+                        database.callDao().insertCall(callEntity)
+                        // Send broadcast to update the chart with proper flags
+                        val intent = Intent("CALL_STATE_CHANGED").apply {
+                            addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES)
+                            setPackage(packageName)
+                        }
+                        sendBroadcast(intent)
+                    }
+                } catch (e: Exception) {
+                    Log.e("IncomingCallService", "Error handling call state change: ${e.message}")
                 }
             }
         }
+        
+        Log.d("CallState", "State: $state, SIM: $simCarrier, SIM Number: $simIccId, SIM Slot: $simSlot")
     }
 
     private fun setupPhoneStateListener() {
         telephonyManager = getSystemService(TELEPHONY_SERVICE) as TelephonyManager
         phoneStateListener = object : PhoneStateListener() {
             override fun onCallStateChanged(state: Int, phoneNumber: String?) {
+                // Get current call SIM info
+                val (simCarrier, simIccId, simSlot) = getCurrentCallSimInfo()
+                Log.e("CALL_STATE", "Call State: $state, " +
+                        "Phone: $phoneNumber, " +
+                        "Using SIM Slot: $simSlot, " +
+                        "Carrier: $simCarrier")
+
                 when (state) {
                     TelephonyManager.CALL_STATE_RINGING -> {
                         wasCallRinging = true
@@ -275,6 +373,8 @@ class IncomingCallService : Service() {
         telephonyManager?.listen(phoneStateListener, PhoneStateListener.LISTEN_CALL_STATE)
     }
 
+
+
     override fun onDestroy() {
         super.onDestroy()
         telephonyManager?.listen(phoneStateListener, PhoneStateListener.LISTEN_NONE)
@@ -294,22 +394,5 @@ class IncomingCallService : Service() {
         }
     }
 
-    private fun getCurrentSimCard() {
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                val subscriptionManager = getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
-                val activeSubscriptionInfoList = subscriptionManager.activeSubscriptionInfoList
-                if (activeSubscriptionInfoList != null && activeSubscriptionInfoList.isNotEmpty()) {
-                    val activeSubscriptionInfo = activeSubscriptionInfoList[0]
-                    current_simcart = activeSubscriptionInfo.iccId
-                }
-            } else {
-                @Suppress("DEPRECATION")
-                current_simcart = telephonyManager?.simSerialNumber
-            }
-        } catch (e: Exception) {
-            Log.e("IncomingCallService", "Error getting SIM card info: ${e.message}")
-            current_simcart = null
-        }
-    }
+    
 } 
