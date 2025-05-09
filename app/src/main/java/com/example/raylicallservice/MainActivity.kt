@@ -112,23 +112,24 @@ class MainActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.filter_all -> {
-                adapter.filterByCallState(null)
+                adapter.filterByCallState(null,null)
                 true
             }
             R.id.filter_missed -> {
-                adapter.filterByCallState("MISSED")
+                adapter.filterByCallState("MISSED","INCOMING")
                 true
             }
             R.id.filter_answered -> {
-                adapter.filterByCallState("ENDED")
+                adapter.filterByCallState("ENDED","INCOMING")
                 true
             }
             R.id.filter_outgoing -> {
-                adapter.filterByCallState("DIALING")
+               
+                adapter.filterByCallState("ENDED","OUTGOING")
                 true
             }
             R.id.filter_incoming -> {
-                adapter.filterByCallState("RINGING")
+                adapter.filterByCallState("ENDED","INCOMING")
                 true
             }
             else -> super.onOptionsItemSelected(item)

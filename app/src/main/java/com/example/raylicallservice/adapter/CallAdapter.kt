@@ -25,7 +25,7 @@ import com.example.raylicallservice.data.AppDatabase
 import kotlinx.coroutines.launch
 import android.widget.Spinner
 import android.widget.ArrayAdapter
-
+import android.graphics.Color
 
 
 class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
@@ -40,7 +40,7 @@ class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
         val phoneNumberText: TextView = view.findViewById(R.id.phoneNumberText)
         val timestampText: TextView = view.findViewById(R.id.timestampText)
         val durationText: TextView = view.findViewById(R.id.durationText)
-        val callStateIcon: ImageView = view.findViewById(R.id.callStateIcon)
+        //val callStateIcon: ImageView = view.findViewById(R.id.callStateIcon)
         val customerNameText: TextView = view.findViewById(R.id.customerNameText)
         val descriptionText: TextView = view.findViewById(R.id.descriptionText)
         val callStateText: TextView = view.findViewById(R.id.callStateText)
@@ -83,15 +83,16 @@ class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
         
         // Set text color and icon based on call state
         val (textColor, iconRes) = when (call.callState) {
-            "MISSED" -> Pair(android.graphics.Color.RED, android.R.drawable.ic_menu_close_clear_cancel)
+            "MISSED" -> Pair(android.graphics.Color.RED, R.drawable.ic_missed_call)
             "RINGING" -> Pair(android.graphics.Color.BLUE, android.R.drawable.ic_menu_call)
             "IN_PROGRESS" -> Pair(android.graphics.Color.GREEN, android.R.drawable.ic_menu_call)
-            "ENDED" -> Pair(android.graphics.Color.GREEN, android.R.drawable.ic_menu_call)
+            "ENDED" -> Pair(Color.parseColor("#4CAF50"), android.R.drawable.ic_menu_call)
             else -> Pair(android.graphics.Color.BLACK, android.R.drawable.ic_menu_call)
         }
 
-        holder.callStateIcon.setImageResource(iconRes)
-        holder.callStateText.text = getCallStateText(call.callState)
+        //holder.callStateIcon.setImageResource(iconRes)
+        holder.callStateText.text = getCallStateText(call.callState, call.callDirection, "en")
+        holder.callStateText.setTextColor(textColor)
 
         // Handle expandable section
         val isExpanded = position == expandedPosition
@@ -167,7 +168,7 @@ class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
         dialogView.findViewById<TextView>(R.id.dialogTimestamp).text = 
             "Time: ${dateFormat.format(call.timestamp)}"
         dialogView.findViewById<TextView>(R.id.dialogCallState).text = 
-            "State: ${getCallStateText(call.callState)}"
+            "State: ${getCallStateText(call.callState, call.callDirection, "en")}"
         dialogView.findViewById<TextView>(R.id.dialogDuration).text = 
             "Duration: ${formatDuration(call.duration)}"
 
@@ -312,12 +313,12 @@ class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
         notifyDataSetChanged()
     }
 
-    fun filterByCallState(state: String?) {
+    fun filterByCallState(state: String?,calldirection : String?) {
         currentFilter = state
-        filteredCalls = if (state == null) {
+        filteredCalls = if (state == null && calldirection == null) {
             calls
         } else {
-            calls.filter { it.callState == state }
+            calls.filter { it.callState == state && it.callDirection == calldirection }
         }
         notifyDataSetChanged()
     }
@@ -328,21 +329,21 @@ class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
         return String.format("%02d:%02d", minutes, remainingSeconds)
     }
 
-    private fun getCallStateText(state: String, language: String = "en"): String {
+    private fun getCallStateText(state: String, callDirection: String, language: String = "en"): String {
         return when (language) {
             "fa" -> when (state) {
-                "RINGING" -> "تماس ورودی"
+                "RINGING" ->  "در حال تماس"
                 "MISSED" -> "تماس از دست رفته"
-                "IN_PROGRESS" -> "تماس در حال انجام"
-                "ENDED" -> "تماس پایان یافته"
-                "DIALING" -> "تماس خروجی"
+                "IN_PROGRESS" -> ""
+                "ENDED" -> if (callDirection == "INCOMING") "تماس ورودی پاسخ داده شده" else "تماس خروجی انجام شده"
+                "DIALING" -> "در حال شماره گیری"
                 else -> "وضعیت نامشخص"
             }
             else -> when (state) {
                 "RINGING" -> "Incoming Call"
                 "MISSED" -> "Missed Call"
                 "IN_PROGRESS" -> "Call in Progress"
-                "ENDED" -> "Responsed Call"
+                "ENDED" -> if (callDirection == "INCOMING") "Incomming Call" else "Outgoing Call"
                 "DIALING" -> "Outgoing Call"
                 else -> "Unknown State"
             }

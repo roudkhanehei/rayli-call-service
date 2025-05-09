@@ -59,7 +59,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textSize="14sp"
-                        android:textStyle="italic"
+                       
                         android:gravity="end"
                         android:maxLines="1"
                         android:ellipsize="end"
@@ -69,7 +69,7 @@
                     <ImageView
                         android:layout_width="16dp"
                         android:layout_height="16dp"
-                        android:src="@android:drawable/ic_menu_myplaces"
+                        android:src="@drawable/ic_customer"
                         android:layout_marginStart="4dp" />
                 </LinearLayout>
             </LinearLayout>
@@ -91,7 +91,7 @@
                     <ImageView
                         android:layout_width="16dp"
                         android:layout_height="16dp"
-                        android:src="@android:drawable/ic_menu_my_calendar"
+                        android:src="@drawable/ic_calender"
                         android:layout_marginEnd="8dp" />
 
                     <TextView
@@ -110,7 +110,7 @@
                     <ImageView
                         android:layout_width="16dp"
                         android:layout_height="16dp"
-                        android:src="@android:drawable/ic_menu_recent_history"
+                        android:src="@drawable/ic_duration"
                         android:layout_marginEnd="8dp" />
 
                     <TextView
@@ -136,12 +136,7 @@
                     android:orientation="horizontal"
                     android:gravity="center_vertical">
 
-                    <ImageView
-                        android:id="@+id/callStateIcon"
-                        android:layout_width="16dp"
-                        android:layout_height="16dp"
-                        android:layout_marginEnd="8dp" />
-
+                  
                    <TextView
                     android:id="@+id/callStateText"
                     android:layout_width="wrap_content"
@@ -158,7 +153,6 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textSize="14sp"
-                    android:textStyle="italic"
                     android:gravity="end"
                     android:maxLines="1"
                     android:ellipsize="end"
