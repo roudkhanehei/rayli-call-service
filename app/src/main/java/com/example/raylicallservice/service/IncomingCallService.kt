@@ -31,6 +31,17 @@ import android.widget.Toast
 import android.Manifest
 import androidx.core.app.ActivityCompat
 import android.content.pm.PackageManager
+import android.app.AlertDialog
+import android.os.Handler
+import android.os.Looper
+import android.view.LayoutInflater
+import android.view.WindowManager
+import android.widget.TextView
+import com.example.raylicallservice.R
+import android.view.Gravity
+import android.widget.Button
+import android.widget.PopupWindow
+import android.view.View
 
 
 class IncomingCallService : Service() {
@@ -53,6 +64,7 @@ class IncomingCallService : Service() {
     private var callEndTime: Long = 0
     private var isOutgoingCall = false
     private var currentCallSimInfo: Triple<String?, String?, Int>? = null
+    private var popupWindow: PopupWindow? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -206,8 +218,8 @@ class IncomingCallService : Service() {
         val _currentTime = Date()
         val timestampString = dateFormat.format(_currentTime)
         val callId = timestampString
+        
         val currentTime = Date()
-        val formattedTime = dateFormat.format(currentTime)
         
         // Get contact name if available
         val contactName = getContactName(phoneNumber)
@@ -227,14 +239,15 @@ class IncomingCallService : Service() {
             sim_number = simIccId,
             sim_slot = simSlot
         )
-        
+
+      
         serviceScope.launch {
             if(callEntity.phoneNumber != null) {
                 database.callDao().insertCall(callEntity)
             }
         }
         
-        Log.d("IncomingCall", "Call ID: $callId, Time: $formattedTime, Number: $phoneNumber, Name: $contactName, SIM: $simCarrier, SIM Number: $simIccId, SIM Slot: $simSlot")
+       
     }
 
     private fun handleOutgoingCall(phoneNumber: String?) {
@@ -331,6 +344,129 @@ class IncomingCallService : Service() {
         Log.d("CallState", "State: $state, SIM: $simCarrier, SIM Number: $simIccId, SIM Slot: $simSlot")
     }
 
+
+
+    private fun showIncomingCallPopup(phoneNumber: String?, simCarrier: String?) {
+        Handler(Looper.getMainLooper()).post {
+            try {
+                val inflater = LayoutInflater.from(applicationContext)
+                val popupView = inflater.inflate(R.layout.popup_incoming_call, null)
+
+                // Convert 10dp to pixels
+                val marginInPixels = (10 * applicationContext.resources.displayMetrics.density).toInt()
+
+                // Set up the popup window
+                popupWindow = PopupWindow(
+                    popupView,
+                    WindowManager.LayoutParams.MATCH_PARENT,
+                    WindowManager.LayoutParams.WRAP_CONTENT,
+                    true
+                )
+
+                // Set up the views
+                val titleView = popupView.findViewById<TextView>(R.id.popupTitle)
+                val popupLastCallView = popupView.findViewById<TextView>(R.id.popupLastCall)
+                val popupCommentView = popupView.findViewById<TextView>(R.id.popupComment)
+                val dismissButton = popupView.findViewById<Button>(R.id.btnDismiss)
+
+                // Get contact name if available
+                val contactName = getContactName(phoneNumber)
+                val displayName = contactName ?: phoneNumber ?: "Unknown"
+
+                // Set the text
+                titleView.text = "Incoming Call"
+                //popupLastCallView.text = displayName
+
+                // Get last call information
+                if (phoneNumber != null) {
+                    serviceScope.launch {
+                        database.callDao().getCallsByPhoneNumber(phoneNumber).collect { calls ->
+                            if (calls.isNotEmpty()) {
+                                val lastCall = calls.first()
+                                val lastCallTime = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+                                    .format(lastCall.timestamp)
+                                val lastCallState = when {
+                                    lastCall.callState == "ENDED" && lastCall.callDirection == "INCOMING" -> "Answered"
+                                    lastCall.callState == "MISSED" -> "Missed"
+                                    lastCall.callDirection == "OUTGOING" -> "Outgoing"
+                                    else -> lastCall.callState
+                                }
+                                
+                                val LastDuration = lastCall.duration
+                                val LastComment = lastCall.description                   
+                                val Callduration = lastCall.duration
+                                // Convert duration to hours, minutes, seconds
+                                val hours = Callduration / 3600
+                                val minutes = (Callduration % 3600) / 60
+                                val seconds = Callduration % 60
+
+                                // Format duration string
+                                val durationString = when {
+                                    hours > 0 -> String.format("%dh %dm %ds", hours, minutes, seconds)
+                                    minutes > 0 -> String.format("%dm %ds", minutes, seconds)
+                                    else -> String.format("%ds", seconds)
+                                }
+
+                                popupLastCallView.text = "Last Call: $lastCallTime ($lastCallState) ($durationString)"
+                                popupCommentView.text = LastComment ?: "No Comment"
+                            } else {
+                                popupLastCallView.text = "First Call"
+                                popupCommentView.text = "No Comment"
+                            }
+                        }
+                    }
+                }
+
+                // Set up dismiss button
+                dismissButton.setOnClickListener {
+                    popupWindow?.dismiss()
+                }
+
+                // Set window type for showing over other apps
+                popupWindow?.setWindowLayoutType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY)
+
+                // Get the window manager
+                val windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
+                val display = windowManager.defaultDisplay
+                val size = android.graphics.Point()
+                display.getSize(size)
+
+                // Calculate the width of the popup (screen width - margins)
+                val popupWidth = size.x - (2 * marginInPixels)
+
+                // Set the width of the popup
+                popupWindow?.width = popupWidth
+
+                // Calculate vertical position (center of screen)
+                val screenHeight = size.y
+                val popupHeight = popupView.measuredHeight
+                val verticalOffset = (screenHeight - popupHeight) / 2
+
+                // Show the popup window in the center
+                popupWindow?.showAtLocation(
+                    popupView,
+                    Gravity.TOP or Gravity.CENTER_HORIZONTAL,
+                    0,
+                    verticalOffset
+                )
+
+                // Auto dismiss after 10 seconds
+                Handler(Looper.getMainLooper()).postDelayed({
+                    popupWindow?.dismiss()
+                }, 10000)
+
+            } catch (e: Exception) {
+                Log.e("IncomingCallService", "Error showing popup: ${e.message}")
+                // Fallback to toast if popup fails
+                Toast.makeText(
+                    applicationContext,
+                    "Incoming call from: ${phoneNumber ?: "Unknown"}\nSIM: $simCarrier",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
+
     private fun setupPhoneStateListener() {
         telephonyManager = getSystemService(TELEPHONY_SERVICE) as TelephonyManager
         phoneStateListener = object : PhoneStateListener() {
@@ -348,8 +484,12 @@ class IncomingCallService : Service() {
                         wasCallAnswered = false
                         callStartTime = 0
                         callEndTime = 0
-                        //handleIncomingCall(phoneNumber)
+                        
+                        // Show incoming call popup
+                        showIncomingCallPopup(phoneNumber, simCarrier)
                     }
+
+
                     TelephonyManager.CALL_STATE_IDLE -> {
                         if (wasCallRinging && !wasCallAnswered) {
                             handleCallStateChange(phoneNumber, "MISSED")

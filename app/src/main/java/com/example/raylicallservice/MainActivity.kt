@@ -36,9 +36,12 @@ import android.content.IntentFilter
 import android.util.Log
 import android.view.View
 import android.widget.TextView
+import android.net.Uri
+import android.provider.Settings
 
 class MainActivity : AppCompatActivity() {
     private val PERMISSIONS_REQUEST_CODE = 123
+    private val OVERLAY_PERMISSION_REQ_CODE = 124
     private val REQUIRED_PERMISSIONS = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         arrayOf(
             Manifest.permission.READ_PHONE_STATE,
@@ -92,6 +95,14 @@ class MainActivity : AppCompatActivity() {
             startCallService()
         } else {
             requestPermissions()
+        }
+
+        if (!Settings.canDrawOverlays(this)) {
+            val intent = Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:$packageName")
+            )
+            startActivityForResult(intent, OVERLAY_PERMISSION_REQ_CODE)
         }
     }
 
@@ -185,6 +196,15 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == OVERLAY_PERMISSION_REQ_CODE) {
+            if (!Settings.canDrawOverlays(this)) {
+                Toast.makeText(this, "Overlay permission is required for call notifications", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
     private fun startCallService() {
         val serviceIntent = Intent(this, IncomingCallService::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -199,41 +219,31 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupWeeklyCallsChart() {        // Get data for the last 7 days
 
-        
-        lifecycleScope.launch {
-            val calendar = Calendar.getInstance()
-            val calendarTotal = Calendar.getInstance()
 
-            val dateFormat = SimpleDateFormat("MM/dd", Locale.getDefault())
-            val entries = ArrayList<BarEntry>()
-            val entries2 = ArrayList<BarEntry>()
-            val entries3 = ArrayList<BarEntry>()
-            val labels = ArrayList<String>()
+        lifecycleScope.launch {
 
             val totalResponsedCallsTextTV = findViewById<TextView>(R.id.totalResponsedCallsText)
             val missedCallsTextTV = findViewById<TextView>(R.id.missedCallsText)
             val answeredCallsTextVT = findViewById<TextView>(R.id.answeredCallsText)
             val statisticsTextTV = findViewById<TextView>(R.id.statisticsText)
 
-
-            // Get total calls for the last 7 days
-            calendarTotal.add(Calendar.DAY_OF_YEAR, -6)
-            val startOfDay1 = calendarTotal.time
-            calendarTotal.add(Calendar.DAY_OF_YEAR, 6)
-            val endOfDay1 = calendarTotal.time
+            val calendar = Calendar.getInstance()
+            val endDate = calendar.time 
+            calendar.add(Calendar.DAY_OF_YEAR, -7)
+            val startDate = calendar.time
 
 
-            val totalCallsForDayEnded = database.callDao().getCallsBetweenDates(startOfDay1, endOfDay1)
+            val totalCallsForDayEnded = database.callDao().getCallsBetweenDates(startDate, endDate)
             .filter { it.callState == "ENDED" && it.callDirection == "INCOMING" }
 
-            val totalCallsForDayMissed = database.callDao().getCallsBetweenDates(startOfDay1, endOfDay1)
-            .filter { it.callState == "MISSED" }
+            val totalCallsForDayMissed = database.callDao().getCallsBetweenDates(startDate, endDate)
+            .filter { it.callState == "MISSED" && it.callDirection == "INCOMING" }
 
-            val totalCallsForDayIncoming = database.callDao().getCallsBetweenDates(startOfDay1, endOfDay1)
-            .filter { it.callDirection == "OUTGOING" }
+            val totalCallsForDayIncoming = database.callDao().getCallsBetweenDates(startDate, endDate)
+            .filter { it.callDirection == "OUTGOING" && it.callState == "ENDED" }
 
             // Calculate total duration for all calls
-            val totalDuration = database.callDao().getCallsBetweenDates(startOfDay1, endOfDay1)
+            val totalDuration = database.callDao().getCallsBetweenDates(startDate, endDate)
                 .sumOf { it.duration }
 
             // Convert duration to hours, minutes, seconds
@@ -252,30 +262,46 @@ class MainActivity : AppCompatActivity() {
             missedCallsTextTV.text = totalCallsForDayMissed.size.toString()
             answeredCallsTextVT.text = totalCallsForDayIncoming.size.toString()
             statisticsTextTV.text = "Statistics ($durationString)"
-            
 
+        }
+
+
+        
+        lifecycleScope.launch {
+            val calendar = Calendar.getInstance()
+
+
+            val dateFormat = SimpleDateFormat("MM/dd", Locale.getDefault())
+            val entries = ArrayList<BarEntry>()
+            val entries2 = ArrayList<BarEntry>()
+            val entries3 = ArrayList<BarEntry>()
+            val labels = ArrayList<String>()
+    
             
             // Get calls for the last 7 days
-            for (i in 6 downTo 0) {
+            for (i in 7 downTo 1) {
                 calendar.add(Calendar.DAY_OF_YEAR, -i)
                 val startOfDay = calendar.time
+
                 calendar.add(Calendar.DAY_OF_YEAR, 1)
                 val endOfDay = calendar.time
+                
+              Log.d("MainActivity", " endOfDay: $endOfDay")
                 calendar.add(Calendar.DAY_OF_YEAR, -1) // Reset to start of day
 
-                val callsForDayEnded = database.callDao().getCallsBetweenDates(startOfDay, endOfDay)
+                val callsForDayEnded = database.callDao().getCallsForDay(endOfDay)
                 .filter { it.callState == "ENDED" && it.callDirection == "INCOMING" }
-                val callsForDayMissed = database.callDao().getCallsBetweenDates(startOfDay, endOfDay)
-                .filter { it.callState == "MISSED" }
-                val callsForDayIncoming = database.callDao().getCallsBetweenDates(startOfDay, endOfDay)
-                .filter { it.callDirection == "OUTGOING" }
+                val callsForDayMissed = database.callDao().getCallsForDay(endOfDay)
+                .filter { it.callState == "MISSED" && it.callDirection == "INCOMING" }
+                val callsForDayIncoming = database.callDao().getCallsForDay(endOfDay)
+                .filter { it.callDirection == "OUTGOING" && it.callState == "ENDED" }
 
-                val dayLabel = dateFormat.format(startOfDay)
+                val dayLabel = dateFormat.format(endOfDay)
                 labels.add(dayLabel)
                 
-                entries.add(BarEntry((6 - i).toFloat(), callsForDayEnded.size.toFloat()))
-                entries2.add(BarEntry((6 - i).toFloat(), callsForDayMissed.size.toFloat()))
-                entries3.add(BarEntry((6 - i).toFloat(), callsForDayIncoming.size.toFloat()))
+                entries.add(BarEntry((7 - i).toFloat(), callsForDayEnded.size.toFloat()))
+                entries2.add(BarEntry((7 - i).toFloat(), callsForDayMissed.size.toFloat()))
+                entries3.add(BarEntry((7 - i).toFloat(), callsForDayIncoming.size.toFloat()))
                 
                 calendar.add(Calendar.DAY_OF_YEAR, i) // Reset calendar
             }
@@ -329,11 +355,16 @@ class MainActivity : AppCompatActivity() {
                     position = XAxis.XAxisPosition.BOTTOM
                     setDrawGridLines(false)
                     granularity = 1f
+                    textSize = 12f
+                    textColor = Color.BLACK
+
                 }
                 
                 axisLeft.apply {
                     setDrawGridLines(true)
                     axisMinimum = 0f
+                    textSize = 12f
+                    textColor = Color.BLACK
                 }
                 
                 axisRight.isEnabled = false

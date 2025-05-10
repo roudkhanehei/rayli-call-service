@@ -65,9 +65,9 @@
                 android:id="@+id/statsCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                app:cardCornerRadius="12dp"
-                app:cardBackgroundColor="@color/light_gray">
+                android:layout_marginTop="8dp"
+                app:cardBackgroundColor="@color/light_gray"
+                app:cardCornerRadius="12dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -76,17 +76,16 @@
                     android:padding="10dp">
 
 
+                    <TextView
+                        android:id="@+id/statisticsText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:text="Statistics"
+                        android:textColor="@color/text_primary"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="8dp"
-                            android:text="Statistics"
-                            android:id="@+id/statisticsText"
-                            android:textColor="@color/text_primary"
-                            android:textSize="18sp"
-                            android:textStyle="bold" />
-                 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -97,72 +96,72 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:orientation="vertical"
-                            android:gravity="center">
+                            android:gravity="center"
+                            android:orientation="vertical">
 
                             <TextView
                                 android:id="@+id/totalResponsedCallsText"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="0"
+                                android:textColor="@color/success"
                                 android:textSize="24sp"
-                                android:textStyle="bold"
-                                android:textColor="@color/success"/>
+                                android:textStyle="bold" />
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Responsed"
-                                android:textSize="14sp"
-                                android:textColor="@color/text_secondary"/>
+                                android:textColor="@color/text_secondary"
+                                android:textSize="14sp" />
                         </LinearLayout>
 
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:orientation="vertical"
-                            android:gravity="center">
+                            android:gravity="center"
+                            android:orientation="vertical">
 
                             <TextView
                                 android:id="@+id/missedCallsText"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="0"
+                                android:textColor="@color/error"
                                 android:textSize="24sp"
-                                android:textStyle="bold"
-                                android:textColor="@color/error"/>
+                                android:textStyle="bold" />
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Missed"
-                                android:textSize="14sp"
-                                android:textColor="@color/text_secondary"/>
+                                android:textColor="@color/text_secondary"
+                                android:textSize="14sp" />
                         </LinearLayout>
 
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:orientation="vertical"
-                            android:gravity="center">
+                            android:gravity="center"
+                            android:orientation="vertical">
 
                             <TextView
                                 android:id="@+id/answeredCallsText"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="0"
+                                android:textColor="@color/colorPrimary"
                                 android:textSize="24sp"
-                                android:textStyle="bold"
-                                android:textColor="@color/colorPrimary"/>
+                                android:textStyle="bold" />
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Outgoing"
-                                android:textSize="14sp"
-                                android:textColor="@color/text_secondary"/>
+                                android:textColor="@color/text_secondary"
+                                android:textSize="14sp" />
                         </LinearLayout>
 
                     </LinearLayout>
