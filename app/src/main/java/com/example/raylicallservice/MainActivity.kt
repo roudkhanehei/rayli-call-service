@@ -502,6 +502,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun makeApiCall() {
+        // Create and show progress dialog
+        val progressDialog = AlertDialog.Builder(this)
+            .setView(R.layout.progress_dialog)
+            .setCancelable(false)
+            .create()
+        
+        progressDialog.show()
+
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val phoneNumber = "+989123456789" // Example phone number
@@ -510,15 +518,15 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 val callData = CallData(
-                    call_id = "1363423",
-                    caller_number = "+989120779383",
-                    description = "Test call",
+                    call_id = "13640301",
+                    caller_number = "+989151779164",
                     call_duration = 120,
                     call_status = "completed",
                     call_date = System.currentTimeMillis(),
                     customer_name = "John Doe",
-                    products_id = "PROD123",
+                    description = "Test call",
                     organization = "Test Org",
+                    products_id = "PROD123",
                     customer_id = 123,
                     simcart = "SIM123",
                     sim_number = "9876543210",
@@ -530,6 +538,9 @@ class MainActivity : AppCompatActivity() {
                 val response = RetrofitClient.apiService.postCallData(callData)
                 
                 withContext(Dispatchers.Main) {
+                    // Dismiss progress dialog
+                    progressDialog.dismiss()
+                    
                     if (response.isSuccessful) {
                         Toast.makeText(
                             this@MainActivity,
@@ -546,6 +557,9 @@ class MainActivity : AppCompatActivity() {
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
+                    // Dismiss progress dialog
+                    progressDialog.dismiss()
+                    
                     Toast.makeText(
                         this@MainActivity,
                         "Error: ${e.message}",
