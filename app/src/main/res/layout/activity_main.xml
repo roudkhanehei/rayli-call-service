@@ -17,14 +17,17 @@
         android:elevation="4dp"
         android:theme="@style/ThemeOverlay.MaterialComponents.Light"
         app:titleTextColor="@android:color/white"
-        app:title="@string/app_name"
         app:navigationIcon="@drawable/ic_toolbar"
         app:navigationIconTint="@android:color/white"
         app:contentInsetStartWithNavigation="16dp"
         app:menu="@menu/toolbar_menu"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:title="@string/app_name"
+        app:subtitle="">
+
+    </com.google.android.material.appbar.MaterialToolbar>
 
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/statisticsCard"

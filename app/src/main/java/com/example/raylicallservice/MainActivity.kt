@@ -40,11 +40,13 @@ import android.net.Uri
 import android.provider.Settings
 import com.example.raylicallservice.api.RetrofitClient
 import com.example.raylicallservice.api.CallData
+import com.example.raylicallservice.api.ApiResponse
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import androidx.appcompat.app.AlertDialog
 import android.provider.ContactsContract
+import android.content.SharedPreferences
 
 class MainActivity : AppCompatActivity() {
     private val PERMISSIONS_REQUEST_CODE = 123
@@ -69,6 +71,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var adapter: CallAdapter
     private lateinit var database: AppDatabase
+    private lateinit var sharedPreferences: SharedPreferences
 
     private val callStateReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -87,6 +90,9 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Initialize SharedPreferences
+        sharedPreferences = getSharedPreferences("RayliCallPrefs", Context.MODE_PRIVATE)
+
         // Register broadcast receiver with proper flags
         val filter = IntentFilter("CALL_STATE_CHANGED").apply {
             priority = IntentFilter.SYSTEM_HIGH_PRIORITY
@@ -98,6 +104,9 @@ class MainActivity : AppCompatActivity() {
         binding.toolbar.setNavigationOnClickListener {
             makeApiCall()
         }
+        
+        // Update toolbar subtitle
+        updateToolbarSubtitle()
         
         setupRecyclerView()
         setupDatabase()
@@ -368,7 +377,7 @@ class MainActivity : AppCompatActivity() {
                 calendar.add(Calendar.DAY_OF_YEAR, 1)
                 val endOfDay = calendar.time
                 
-              Log.d("MainActivity", " endOfDay: $endOfDay")
+           
                 calendar.add(Calendar.DAY_OF_YEAR, -1) // Reset to start of day
 
                 val callsForDayEnded = database.callDao().getCallsForDay(endOfDay)
@@ -501,6 +510,30 @@ class MainActivity : AppCompatActivity() {
         ) == PackageManager.PERMISSION_GRANTED
     }
 
+    private fun saveLastSyncDate() {
+        val currentTime = System.currentTimeMillis()
+        sharedPreferences.edit().apply {
+            putLong("last_sync_time", currentTime)
+            apply()
+        }
+    }
+
+    private fun getLastSyncDate(): String {
+        val lastSyncTime = sharedPreferences.getLong("last_sync_time", 0L)
+        return if (lastSyncTime > 0) {
+            val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+            dateFormat.format(Date(lastSyncTime))
+        } else {
+            "Never"
+        }
+    }
+
+    private fun updateToolbarSubtitle() {
+        binding.toolbar.subtitle = "Last Sync: ${getLastSyncDate()}"
+        binding.toolbar.setSubtitleTextColor(Color.WHITE)
+        binding.toolbar.setSubtitleTextAppearance(this, R.style.ToolbarSubtitleStyle)
+    }
+
     private fun makeApiCall() {
         // Create and show progress dialog
         val progressDialog = AlertDialog.Builder(this)
@@ -508,53 +541,83 @@ class MainActivity : AppCompatActivity() {
             .setCancelable(false)
             .create()
         
+        progressDialog.window?.setBackgroundDrawableResource(R.drawable.dialog_background)
         progressDialog.show()
+
+        // Get reference to progress text
+        val progressTextView = progressDialog.findViewById<TextView>(R.id.syncProgress_text)
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val phoneNumber = "+989123456789" // Example phone number
-                val contactName = withContext(Dispatchers.Main) {
-                    getContactName(phoneNumber)
-                }
-
-                val callData = CallData(
-                    call_id = "13640301",
-                    caller_number = "+989151779164",
-                    call_duration = 120,
-                    call_status = "completed",
-                    call_date = System.currentTimeMillis(),
-                    customer_name = "John Doe",
-                    description = "Test call",
-                    organization = "Test Org",
-                    products_id = "PROD123",
-                    customer_id = 123,
-                    simcart = "SIM123",
-                    sim_number = "9876543210",
-                    sim_slot = "1",
-                    issue = "No issue",
-                    additional_data = "Additional information"
-                )
-
-                val response = RetrofitClient.apiService.postCallData(callData)
+                // Get all unsynced calls
+                val unsyncedCalls = database.callDao().getUnsyncedCalls()
+                var syncedCount = 0
+                var lastResponse: retrofit2.Response<ApiResponse>? = null
                 
+                // Update their sync status
+                unsyncedCalls.forEach { call ->            
+                    withContext(Dispatchers.Main) {
+                        progressTextView?.text = "Syncing call ${syncedCount + 1} of ${unsyncedCalls.size}..."
+                    }
+            
+                   
+                    database.callDao().updateCallSyncStatus(call.callId, true)
+
+                   
+                    // Convert CallEntity to CallData
+                    val callData = CallData(
+                        call_id = call.callId.toString(),
+                        caller_number = call.phoneNumber ?: "",
+                        call_duration = call.duration ?: 0,
+                        call_status = call.callState,
+                        call_date = call.timestamp.time,
+                        customer_name = call.customerName ?: "",
+                        products_id = call.productsId ?: "0",
+                        description = call.description ?: "", 
+                        organization = call.organization ?: "",
+                        customer_id = call.customerId?.toLong() ?: 0,
+                        simcart = call.simcart ?: "",
+                        sim_number = call.sim_number ?: "",
+                        sim_slot = call.sim_slot?.toString() ?: "",
+                        issue = call.issue?.toString() ?: "",
+                        additional_data = "",
+                        imei = call.imei ?: "",
+                        call_direction = call.callDirection ?: "",
+                        is_synced = true
+                    )
+
+                    
+                    lastResponse = RetrofitClient.apiService.postCallData(callData)
+                 
+                    syncedCount++
+                }
+               
                 withContext(Dispatchers.Main) {
                     // Dismiss progress dialog
                     progressDialog.dismiss()
                     
-                    if (response.isSuccessful) {
-                        Toast.makeText(
-                            this@MainActivity,
-                            "Call data sent successfully: ${response.body()?.message}",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                    if (lastResponse?.isSuccessful == true) {
+                        // Save sync time after successful API call
+                        saveLastSyncDate()
+                        // Update toolbar subtitle
+                        updateToolbarSubtitle()
+                        
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(
+                                this@MainActivity,
+                                "Call data sent successfully: ${lastResponse?.body()?.message}",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
                     } else {
                         Toast.makeText(
                             this@MainActivity,
-                            "Failed to send call data: ${response.code()}",
+                            "Failed to send call data: ${lastResponse?.code()}",
                             Toast.LENGTH_SHORT
                         ).show()
                     }
                 }
+    
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     // Dismiss progress dialog

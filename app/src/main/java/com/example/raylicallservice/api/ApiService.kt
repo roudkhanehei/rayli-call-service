@@ -24,10 +24,8 @@ data class CallData(
     val sim_number: String? = null,
     val sim_slot: String? = null,
     val issue: String? = null,
-    val additional_data: String? = null
-)
-
-data class ApiResponse(
-    val success: Boolean,
-    val message: String
+    val additional_data: String? = null,
+    val imei: String? = null,
+    val call_direction: String? = null,
+    val is_synced: Boolean = false
 ) 

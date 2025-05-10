@@ -45,6 +45,7 @@ class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
         val descriptionText: TextView = view.findViewById(R.id.descriptionText)
         val callStateText: TextView = view.findViewById(R.id.callStateText)
         val callDirectionIcon: ImageView = view.findViewById(R.id.callDirectionIcon)
+        val syncedIcon: ImageView = view.findViewById(R.id.syncedIcon)
         val mainContent: LinearLayout = view.findViewById(R.id.mainContent)
         val expandableSection: LinearLayout = view.findViewById(R.id.expandableSection)
         val btnCall: Button = view.findViewById(R.id.btnCall)
@@ -66,7 +67,9 @@ class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
         holder.timestampText.text = dateFormat.format(call.timestamp)
         holder.durationText.text = formatDuration(call.duration)
         holder.callDirectionIcon.setImageResource(if (call.callDirection == "INCOMING") R.drawable.ic_call_incoming else R.drawable.ic_call_outgoing)
-
+        holder.syncedIcon.setImageResource(if (call.isSynced) R.drawable.ic_synced else R.drawable.ic_synced)
+        holder.syncedIcon.visibility = if (call.isSynced) View.VISIBLE else View.GONE
+        
         // Limit description to 30 characters with smooth ellipsis
         holder.descriptionText.text = if (call.description?.length ?: 0 > 30) {
             "${call.description?.take(30)}..."

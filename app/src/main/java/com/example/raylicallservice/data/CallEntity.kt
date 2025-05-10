@@ -33,6 +33,7 @@ data class CallEntity(
     val imei: String? = null,
     val status: String? = null,
     val callDirection: String = "INCOMING", // Default to INCOMING for backward compatibility
-    val issue: IssueType? = null
+    val issue: IssueType? = null,
+    val isSynced: Boolean = false
 ) 
 

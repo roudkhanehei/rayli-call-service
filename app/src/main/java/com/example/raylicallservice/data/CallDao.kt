@@ -30,5 +30,9 @@ interface CallDao {
     @Query("SELECT * FROM calls WHERE timestamp >= :startDate AND timestamp < :endDate ORDER BY timestamp DESC")
     suspend fun getCallsBetweenDates(startDate: Date, endDate: Date): List<CallEntity>
 
-   
+    @Query("SELECT * FROM calls WHERE isSynced = 0 ORDER BY timestamp DESC")
+    suspend fun getUnsyncedCalls(): List<CallEntity>
+
+    @Query("UPDATE calls SET isSynced = :isSynced WHERE callId = :callId")
+    suspend fun updateCallSyncStatus(callId: String, isSynced: Boolean)
 } 
