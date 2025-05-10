@@ -39,10 +39,12 @@ import android.widget.TextView
 import android.net.Uri
 import android.provider.Settings
 import com.example.raylicallservice.api.RetrofitClient
-import com.example.raylicallservice.api.PostData
+import com.example.raylicallservice.api.CallData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import androidx.appcompat.app.AlertDialog
+import android.provider.ContactsContract
 
 class MainActivity : AppCompatActivity() {
     private val PERMISSIONS_REQUEST_CODE = 123
@@ -52,13 +54,15 @@ class MainActivity : AppCompatActivity() {
             Manifest.permission.READ_PHONE_STATE,
             Manifest.permission.READ_CALL_LOG,
             Manifest.permission.READ_CONTACTS,
-            Manifest.permission.POST_NOTIFICATIONS
+            Manifest.permission.POST_NOTIFICATIONS,
+            Manifest.permission.READ_PHONE_NUMBERS
         )
     } else {
         arrayOf(
             Manifest.permission.READ_PHONE_STATE,
             Manifest.permission.READ_CALL_LOG,
-            Manifest.permission.READ_CONTACTS
+            Manifest.permission.READ_CONTACTS,
+            Manifest.permission.READ_PHONE_NUMBERS
         )
     }
 
@@ -179,13 +183,25 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkPermissions(): Boolean {
-        return REQUIRED_PERMISSIONS.all {
-            ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
+        val permissions = REQUIRED_PERMISSIONS.filter {
+            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
         }
+        
+        if (permissions.isNotEmpty()) {
+            ActivityCompat.requestPermissions(this, permissions.toTypedArray(), PERMISSIONS_REQUEST_CODE)
+            return false
+        }
+        return true
     }
 
     private fun requestPermissions() {
-        ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, PERMISSIONS_REQUEST_CODE)
+        val permissions = REQUIRED_PERMISSIONS.filter {
+            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+        }
+        
+        if (permissions.isNotEmpty()) {
+            ActivityCompat.requestPermissions(this, permissions.toTypedArray(), PERMISSIONS_REQUEST_CODE)
+        }
     }
 
     override fun onRequestPermissionsResult(
@@ -195,13 +211,71 @@ class MainActivity : AppCompatActivity() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == PERMISSIONS_REQUEST_CODE) {
-            if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
+            val deniedPermissions = permissions.filterIndexed { index, _ ->
+                grantResults[index] != PackageManager.PERMISSION_GRANTED
+            }
+
+            if (deniedPermissions.isEmpty()) {
+                // All permissions granted
                 startCallService()
             } else {
-                Toast.makeText(this, "All permissions are required for the app to work properly", Toast.LENGTH_LONG).show()
-                finish()
+                // Some permissions were denied
+                val shouldShowRationale = deniedPermissions.any { permission ->
+                    shouldShowRequestPermissionRationale(permission)
+                }
+
+                if (shouldShowRationale) {
+                    // Show explanation why permissions are needed
+                    showPermissionExplanationDialog(deniedPermissions)
+                } else {
+                    // Permissions permanently denied, show settings dialog
+                    showSettingsDialog()
+                }
             }
         }
+    }
+
+    private fun showPermissionExplanationDialog(deniedPermissions: List<String>) {
+        val message = when {
+            deniedPermissions.contains(Manifest.permission.READ_CONTACTS) -> 
+                "Contacts permission is required to access contact information for incoming calls."
+            deniedPermissions.contains(Manifest.permission.READ_CALL_LOG) ->
+                "Call log permission is required to track call history."
+            deniedPermissions.contains(Manifest.permission.READ_PHONE_STATE) ->
+                "Phone state permission is required to detect incoming and outgoing calls."
+            else -> "All permissions are required for the app to work properly."
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("Permissions Required")
+            .setMessage(message)
+            .setPositiveButton("Grant Permissions") { _, _ ->
+                requestPermissions()
+            }
+            .setNegativeButton("Cancel") { dialog, _ ->
+                dialog.dismiss()
+                finish()
+            }
+            .setCancelable(false)
+            .show()
+    }
+
+    private fun showSettingsDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Permissions Required")
+            .setMessage("Some permissions are required for the app to work properly. Please grant them in Settings.")
+            .setPositiveButton("Settings") { _, _ ->
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.fromParts("package", packageName, null)
+                }
+                startActivity(intent)
+            }
+            .setNegativeButton("Cancel") { dialog, _ ->
+                dialog.dismiss()
+                finish()
+            }
+            .setCancelable(false)
+            .show()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -392,24 +466,80 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun getContactName(phoneNumber: String): String? {
+        if (!hasContactPermission()) {
+            return null
+        }
+
+        return try {
+            val uri = Uri.withAppendedPath(
+                ContactsContract.PhoneLookup.CONTENT_FILTER_URI,
+                Uri.encode(phoneNumber)
+            )
+            
+            val projection = arrayOf(ContactsContract.PhoneLookup.DISPLAY_NAME)
+            val cursor = contentResolver.query(uri, projection, null, null, null)
+            
+            cursor?.use {
+                if (it.moveToFirst()) {
+                    val nameIndex = it.getColumnIndex(ContactsContract.PhoneLookup.DISPLAY_NAME)
+                    if (nameIndex != -1) {
+                        it.getString(nameIndex)
+                    } else null
+                } else null
+            }
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Error getting contact name: ${e.message}")
+            null
+        }
+    }
+
+    private fun hasContactPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.READ_CONTACTS
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
     private fun makeApiCall() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val response = RetrofitClient.apiService.postData(
-                    PostData(message = "Toolbar icon clicked!")
+                val phoneNumber = "+989123456789" // Example phone number
+                val contactName = withContext(Dispatchers.Main) {
+                    getContactName(phoneNumber)
+                }
+
+                val callData = CallData(
+                    call_id = "1363423",
+                    caller_number = "+989120779383",
+                    description = "Test call",
+                    call_duration = 120,
+                    call_status = "completed",
+                    call_date = System.currentTimeMillis(),
+                    customer_name = "John Doe",
+                    products_id = "PROD123",
+                    organization = "Test Org",
+                    customer_id = 123,
+                    simcart = "SIM123",
+                    sim_number = "9876543210",
+                    sim_slot = "1",
+                    issue = "No issue",
+                    additional_data = "Additional information"
                 )
+
+                val response = RetrofitClient.apiService.postCallData(callData)
                 
                 withContext(Dispatchers.Main) {
                     if (response.isSuccessful) {
                         Toast.makeText(
                             this@MainActivity,
-                            "API call successful: ${response.body()?.message}",
+                            "Call data sent successfully: ${response.body()?.message}",
                             Toast.LENGTH_SHORT
                         ).show()
                     } else {
                         Toast.makeText(
                             this@MainActivity,
-                            "API call failed: ${response.code()}",
+                            "Failed to send call data: ${response.code()}",
                             Toast.LENGTH_SHORT
                         ).show()
                     }
@@ -423,6 +553,14 @@ class MainActivity : AppCompatActivity() {
                     ).show()
                 }
             }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Check permissions again when returning to the app
+        if (checkPermissions()) {
+            startCallService()
         }
     }
 }
