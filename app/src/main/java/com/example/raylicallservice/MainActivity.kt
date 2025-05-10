@@ -38,6 +38,11 @@ import android.view.View
 import android.widget.TextView
 import android.net.Uri
 import android.provider.Settings
+import com.example.raylicallservice.api.RetrofitClient
+import com.example.raylicallservice.api.PostData
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity() {
     private val PERMISSIONS_REQUEST_CODE = 123
@@ -86,6 +91,9 @@ class MainActivity : AppCompatActivity() {
 
         // Setup toolbar
         setSupportActionBar(binding.toolbar)
+        binding.toolbar.setNavigationOnClickListener {
+            makeApiCall()
+        }
         
         setupRecyclerView()
         setupDatabase()
@@ -381,6 +389,40 @@ class MainActivity : AppCompatActivity() {
             binding.weeklyCallsChart.animateY(1000)
             binding.weeklyCallsChart.invalidate()
 
+        }
+    }
+
+    private fun makeApiCall() {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val response = RetrofitClient.apiService.postData(
+                    PostData(message = "Toolbar icon clicked!")
+                )
+                
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful) {
+                        Toast.makeText(
+                            this@MainActivity,
+                            "API call successful: ${response.body()?.message}",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        Toast.makeText(
+                            this@MainActivity,
+                            "API call failed: ${response.code()}",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                        this@MainActivity,
+                        "Error: ${e.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
         }
     }
 }
