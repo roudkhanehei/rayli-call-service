@@ -37,42 +37,56 @@
             android:textStyle="bold"
             android:layout_marginBottom="12dp"/>
 
-        <TextView
-            android:id="@+id/dialogTimestamp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textSize="14sp"
-            android:layout_marginBottom="12dp"/>
+            <com.google.android.material.textfield.TextInputLayout  
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+    android:layout_marginBottom="16dp"
+    android:hint="Customer name">
 
-        <TextView
-            android:id="@+id/dialogCallState"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textSize="14sp"
-            android:layout_marginBottom="12dp"/>
+   
+    <com.google.android.material.textfield.TextInputEditText
+        android:id="@+id/dialogCustomerName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+        </com.google.android.material.textfield.TextInputLayout>
 
-        <TextView
-            android:id="@+id/dialogDuration"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textSize="14sp"
-            android:layout_marginBottom="12dp"/>
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Organization"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="8dp"/>
+<com.google.android.material.textfield.TextInputLayout
+  
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+    android:layout_marginBottom="16dp"
+    android:hint="Organization">
 
-        <EditText
-            android:id="@+id/dialogOrganization"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-  android:background="@android:drawable/editbox_background"
-            android:padding="8dp"
-            android:layout_marginBottom="8dp"/>
+   
+    <com.google.android.material.textfield.TextInputEditText
+        android:id="@+id/dialogOrganization"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+</com.google.android.material.textfield.TextInputLayout>
+
+
+
+<com.google.android.material.textfield.TextInputLayout
+  
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+    android:layout_marginBottom="16dp"
+    android:hint="Description">
+
+   
+    <com.google.android.material.textfield.TextInputEditText
+        android:id="@+id/dialogDescription"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+</com.google.android.material.textfield.TextInputLayout>
+
+
 
         <TextView
             android:layout_width="match_parent"
@@ -97,41 +111,8 @@
             android:minHeight="56dp"
             android:elevation="2dp"/>
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Customer Name"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="8dp"/>
 
-        <EditText
-            android:id="@+id/dialogCustomerName"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="textPersonName"
-            android:background="@android:drawable/editbox_background"
-            android:padding="8dp"
-            android:layout_marginBottom="16dp"/>
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Description"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="8dp"/>
-
-        <EditText
-            android:id="@+id/dialogDescription"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minLines="3"
-            android:gravity="top|start"
-            android:inputType="textMultiLine"
-            android:background="@android:drawable/editbox_background"
-            android:padding="8dp"
-            android:layout_marginBottom="16dp"/>
 
         <LinearLayout
             android:layout_width="match_parent"

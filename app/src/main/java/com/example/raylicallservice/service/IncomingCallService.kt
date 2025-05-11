@@ -45,6 +45,7 @@ import android.view.View
 
 
 class IncomingCallService : Service() {
+    
     private var telephonyManager: TelephonyManager? = null
     private var phoneStateListener: PhoneStateListener? = null
     private val CHANNEL_ID = "IncomingCallChannel"
@@ -81,9 +82,12 @@ class IncomingCallService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val name = "Incoming Calls"
             val descriptionText = "Notifications for incoming calls"
-            val importance = NotificationManager.IMPORTANCE_HIGH
+            val importance = NotificationManager.IMPORTANCE_LOW
             val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
                 description = descriptionText
+                setSound(null, null)
+                enableVibration(false)
+                enableLights(false)
             }
             val notificationManager: NotificationManager =
                 getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -97,7 +101,9 @@ class IncomingCallService : Service() {
             .setContentTitle(title)
             .setContentText(content)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setSound(null)
+            .setVibrate(null)
             .setAutoCancel(true)
             .build()
 
@@ -109,7 +115,9 @@ class IncomingCallService : Service() {
             .setContentTitle("Call Service")
             .setContentText("Listening for incoming calls")
             .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setSound(null)
+            .setVibrate(null)
             .build()
 
         startForeground(NOTIFICATION_ID, notification)
@@ -240,13 +248,13 @@ class IncomingCallService : Service() {
             sim_slot = simSlot
         )
 
-      
+      /* 
         serviceScope.launch {
             if(callEntity.phoneNumber != null) {
                 database.callDao().insertCall(callEntity)
             }
         }
-        
+        */
        
     }
 
@@ -278,6 +286,7 @@ class IncomingCallService : Service() {
             sim_slot = simSlot
         )
         }
+
 
     private fun calculateCallDuration(): Long {
         return if (callStartTime > 0 && callEndTime > 0) {
@@ -343,8 +352,6 @@ class IncomingCallService : Service() {
         
         Log.d("CallState", "State: $state, SIM: $simCarrier, SIM Number: $simIccId, SIM Slot: $simSlot")
     }
-
-
 
     private fun showIncomingCallPopup(phoneNumber: String?, simCarrier: String?) {
         Handler(Looper.getMainLooper()).post {
@@ -456,7 +463,7 @@ class IncomingCallService : Service() {
                 }, 10000)
 
             } catch (e: Exception) {
-                Log.e("IncomingCallService", "Error showing popup: ${e.message}")
+             
                 // Fallback to toast if popup fails
                 Toast.makeText(
                     applicationContext,
@@ -483,20 +490,21 @@ class IncomingCallService : Service() {
                         wasCallRinging = true
                         wasCallAnswered = false
                         callStartTime = 0
-                        callEndTime = 0
-                        
+                        callEndTime = 0                        
                         // Show incoming call popup
                         showIncomingCallPopup(phoneNumber, simCarrier)
                     }
 
-
                     TelephonyManager.CALL_STATE_IDLE -> {
                         if (wasCallRinging && !wasCallAnswered) {
                             handleCallStateChange(phoneNumber, "MISSED")
+                            isOutgoingCall=false
                         } else {
                             callEndTime = System.currentTimeMillis()
                             handleCallStateChange(phoneNumber, "ENDED")
+                            isOutgoingCall=false
                         }
+                        
                         wasCallRinging = false
                         wasCallAnswered = false
                     }

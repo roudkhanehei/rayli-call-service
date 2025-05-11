@@ -143,6 +143,11 @@ class MainActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
+            R.id.action_settings -> {
+                // Handle settings click
+                showSettingsDialog()
+                true
+            }
             R.id.filter_all -> {
                 adapter.filterByCallState(null,null)
                 true
@@ -156,7 +161,6 @@ class MainActivity : AppCompatActivity() {
                 true
             }
             R.id.filter_outgoing -> {
-               
                 adapter.filterByCallState("ENDED","OUTGOING")
                 true
             }
@@ -270,20 +274,49 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showSettingsDialog() {
-        AlertDialog.Builder(this)
-            .setTitle("Permissions Required")
-            .setMessage("Some permissions are required for the app to work properly. Please grant them in Settings.")
-            .setPositiveButton("Settings") { _, _ ->
-                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                    data = Uri.fromParts("package", packageName, null)
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("Settings")
+            .setItems(arrayOf("Preferences","Sync Now", "Clear All Data", "About")) { _, which ->
+                when (which) {
+                    0 -> showPreferencesDialog()
+                    1 -> makeApiCall() // Sync Now
+                    2 -> showClearDataConfirmation() // Clear All Data
+                    3 -> showAboutDialog() // About
                 }
-                startActivity(intent)
             }
-            .setNegativeButton("Cancel") { dialog, _ ->
-                dialog.dismiss()
-                finish()
+            .create()
+        
+        dialog.window?.setBackgroundDrawableResource(R.drawable.dialog_background)
+        dialog.show()
+    }
+
+    private fun showPreferencesDialog() {
+       Intent(this, SettingsActivity::class.java).apply {
+        startActivity(this)
+       }
+    }
+
+    private fun showClearDataConfirmation() {
+        AlertDialog.Builder(this)
+            .setTitle("Clear All Data")
+            .setMessage("Are you sure you want to clear all call records? This action cannot be undone.")
+            .setPositiveButton("Clear") { _, _ ->
+                lifecycleScope.launch {
+                    database.callDao().deleteAllCalls()
+                    Toast.makeText(this@MainActivity, "All data cleared", Toast.LENGTH_SHORT).show()
+                }
             }
-            .setCancelable(false)
+            .setNegativeButton("Cancel", null)
+            .create()
+            .show()
+    }
+
+    private fun showAboutDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("About")
+            .setMessage("Rayli Call Manager\nVersion 1.0.5\n\nA call tracking and management application.\n\nDeveloped by\nPejman Roudkhanehei Shalmani")
+            .setPositiveButton("OK", null)
+            .create()
             .show()
     }
 
@@ -554,6 +587,12 @@ class MainActivity : AppCompatActivity() {
                 var syncedCount = 0
                 var lastResponse: retrofit2.Response<ApiResponse>? = null
                 
+                if (unsyncedCalls.isEmpty()) {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(this@MainActivity, "No unsynced calls found", Toast.LENGTH_SHORT).show()
+                    }
+                    progressDialog.dismiss()
+                }else{
                 // Update their sync status
                 unsyncedCalls.forEach { call ->            
                     withContext(Dispatchers.Main) {
@@ -561,7 +600,7 @@ class MainActivity : AppCompatActivity() {
                     }
             
                    
-                    database.callDao().updateCallSyncStatus(call.callId, true)
+          
 
                    
                     // Convert CallEntity to CallData
@@ -570,7 +609,7 @@ class MainActivity : AppCompatActivity() {
                         caller_number = call.phoneNumber ?: "",
                         call_duration = call.duration ?: 0,
                         call_status = call.callState,
-                        call_date = call.timestamp.time,
+                        call_date = convertTimestampToDate(call.timestamp).toString(),
                         customer_name = call.customerName ?: "",
                         products_id = call.productsId ?: "0",
                         description = call.description ?: "", 
@@ -585,9 +624,13 @@ class MainActivity : AppCompatActivity() {
                         call_direction = call.callDirection ?: "",
                         is_synced = true
                     )
+                    //now send the data to the server
+                    lastResponse = RetrofitClient.getInstance(this@MainActivity).apiService.postCallData(callData)
 
-                    
-                    lastResponse = RetrofitClient.apiService.postCallData(callData)
+                    if (lastResponse?.isSuccessful == true) {
+                        // Update call sync status after successful API call
+                        database.callDao().updateCallSyncStatus(call.callId, true)
+                    }
                  
                     syncedCount++
                 }
@@ -617,7 +660,7 @@ class MainActivity : AppCompatActivity() {
                         ).show()
                     }
                 }
-    
+            }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     // Dismiss progress dialog
@@ -638,6 +681,16 @@ class MainActivity : AppCompatActivity() {
         // Check permissions again when returning to the app
         if (checkPermissions()) {
             startCallService()
+        }
+    }
+
+    private fun convertTimestampToDate(timestamp: Date): String {
+        try {
+            // English format
+            val englishFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH)
+            return englishFormat.format(timestamp)
+        } catch (e: Exception) {
+            return "Invalid Date"
         }
     }
 }

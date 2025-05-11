@@ -18,19 +18,32 @@
         <menu>
             <item
                 android:id="@+id/filter_all"
-                android:title="All Calls" />
+                android:title="All Calls"
+                app:showAsAction="never" />
             <item
                 android:id="@+id/filter_missed"
-                android:title="Missed Calls" />
+                android:title="Missed Calls"
+                app:showAsAction="never" />
             <item
                 android:id="@+id/filter_answered"
-                android:title="Answered Calls" />
+                android:title="Answered Calls"
+                app:showAsAction="never" />
             <item
                 android:id="@+id/filter_outgoing"
-                android:title="Outgoing Calls" />
+                android:title="Outgoing Calls"
+                app:showAsAction="never" />
             <item
                 android:id="@+id/filter_incoming"
-                android:title="Incoming Calls" />
+                android:title="Incoming Calls"
+                app:showAsAction="never" />
         </menu>
     </item>
+
+
+            <item
+        android:id="@+id/action_settings"
+        android:icon="@drawable/ic_settings"
+        android:title="Settings"
+        app:iconTint="@android:color/white"
+        app:showAsAction="always" />
 </menu> 

@@ -22,32 +22,52 @@
         android:orientation="vertical"
         android:padding="16dp">
 
+        
+
+<com.google.android.material.textfield.TextInputLayout
+  
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+    android:layout_marginBottom="16dp"
+    android:hint="API Secret Key">
+
+   
+    <com.google.android.material.textfield.TextInputEditText
+        android:id="@+id/editApiKey"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+</com.google.android.material.textfield.TextInputLayout>
+
+<com.google.android.material.textfield.TextInputLayout
+   
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+    android:layout_marginBottom="16dp"
+    android:hint="Worpress Base URL">
+
+    <!--this is the actual edit text which takes the input-->
+    <com.google.android.material.textfield.TextInputEditText
+        android:id="@+id/editApiBaseUrl"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+</com.google.android.material.textfield.TextInputLayout>
+
+        <Button
+            android:id="@+id/btnSaveApiSettings"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Save API Settings"
+            android:layout_marginBottom="16dp"/>
+
         <Switch
             android:id="@+id/switchNotifications"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Enable Notifications"
-            android:layout_marginBottom="16dp"/>
-
-        <Switch
-            android:id="@+id/switchDarkMode"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Dark Mode"
-            android:layout_marginBottom="16dp"/>
-
-        <Button
-            android:id="@+id/btnClearCache"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Clear Cache"
-            android:layout_marginBottom="16dp"/>
-
-        <Button
-            android:id="@+id/btnAbout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="About"
             android:layout_marginBottom="16dp"/>
 
     </LinearLayout>

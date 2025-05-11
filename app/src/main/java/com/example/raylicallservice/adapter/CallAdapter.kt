@@ -26,6 +26,8 @@ import kotlinx.coroutines.launch
 import android.widget.Spinner
 import android.widget.ArrayAdapter
 import android.graphics.Color
+import android.view.Gravity
+import android.view.WindowManager
 
 
 class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
@@ -164,12 +166,34 @@ class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
     }
 
     private fun showCallDetailsDialog(context: android.content.Context, call: CallEntity) {
+        val dialog = AlertDialog.Builder(context, R.style.CustomDialog)
+            .setView(R.layout.dialog_call_details)
+            .create()
+
+        // Set dialog window attributes to adjust for keyboard
+        dialog.window?.apply {
+            // Make dialog full width
+            setLayout(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+            
+            // Set dialog position to bottom
+            setGravity(Gravity.BOTTOM)
+            
+            // Handle keyboard properly
+            setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or 
+                           WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
+            
+            // Set dialog background to be transparent
+            setBackgroundDrawableResource(R.drawable.dialog_background)
+        }
+
         val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_call_details, null)
         
         dialogView.findViewById<TextView>(R.id.dialogPhoneNumber).text = 
             "Phone: ${call.phoneNumber ?: "Unknown"}"
-        dialogView.findViewById<TextView>(R.id.dialogTimestamp).text = 
-            "Time: ${dateFormat.format(call.timestamp)}"
+       
         dialogView.findViewById<TextView>(R.id.dialogCallState).text = 
             "State: ${getCallStateText(call.callState, call.callDirection, "en")}"
         dialogView.findViewById<TextView>(R.id.dialogDuration).text = 
@@ -201,9 +225,7 @@ class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
             }
         }
 
-        val dialog = AlertDialog.Builder(context, R.style.CustomDialog)
-            .setView(dialogView)
-            .create()
+        dialog.setView(dialogView)
 
         dialogView.findViewById<View>(R.id.dialogButton).setOnClickListener {
             dialog.dismiss()

@@ -14,7 +14,7 @@ data class CallData(
     val caller_number: String?,
     val call_duration: Long,
     val call_status: String?,
-    val call_date: Long = System.currentTimeMillis(),
+    val call_date: String?,
     val customer_name: String? = null,
     val products_id: String? = null,
     val description: String? = null,

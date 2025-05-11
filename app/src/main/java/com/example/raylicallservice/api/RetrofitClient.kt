@@ -1,19 +1,20 @@
 package com.example.raylicallservice.api
 
+import android.content.Context
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
-object RetrofitClient {
-    private const val BASE_URL = "https://mr-stock.ir/" // Replace with your actual API base URL
+class RetrofitClient(private val context: Context) {
+    private val BASE_URL = ApiConstants.getApiBaseUrl(context)
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
     }
 
-    private val apiKeyInterceptor = ApiKeyInterceptor()
+    private val apiKeyInterceptor = ApiKeyInterceptor(context)
 
     private val okHttpClient = OkHttpClient.Builder()
         .addInterceptor(apiKeyInterceptor)
@@ -30,4 +31,15 @@ object RetrofitClient {
         .build()
 
     val apiService: ApiService = retrofit.create(ApiService::class.java)
+
+    companion object {
+        @Volatile
+        private var INSTANCE: RetrofitClient? = null
+
+        fun getInstance(context: Context): RetrofitClient {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: RetrofitClient(context.applicationContext).also { INSTANCE = it }
+            }
+        }
+    }
 } 
