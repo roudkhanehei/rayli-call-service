@@ -193,11 +193,6 @@ class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
         
         dialogView.findViewById<TextView>(R.id.dialogPhoneNumber).text = 
             "Phone: ${call.phoneNumber ?: "Unknown"}"
-       
-        dialogView.findViewById<TextView>(R.id.dialogCallState).text = 
-            "State: ${getCallStateText(call.callState, call.callDirection, "en")}"
-        dialogView.findViewById<TextView>(R.id.dialogDuration).text = 
-            "Duration: ${formatDuration(call.duration)}"
 
         val descriptionEditText = dialogView.findViewById<EditText>(R.id.dialogDescription)
         descriptionEditText.setText(call.description ?: "")
