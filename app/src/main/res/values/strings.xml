@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Rayli Call Manager</string>
+    <string name="WpDescriptiontextView">To transfer incoming contact information, along with descriptions and other information, to your WordPress store website, simply enter your website address. Also, define a highly secure private key to communicate with the WordPress plugin here.</string>
+    <string name="EndpointUrl">To receive recorded calls in your software and dedicated website, simply register your server\'s final address. For each recorded call, we will send you the contact information in JSON format using the POST method.</string>
 </resources>

@@ -13,10 +13,12 @@ class SettingsActivity : AppCompatActivity() {
         private const val PREFS_NAME = "ApiSettings"
         private const val KEY_API_KEY = "api_key"
         private const val KEY_API_BASE_URL = "api_base_url"
+        private const val KEY_API_ENDPOINT_URL = "api_endpoint_url"
     }
 
     private lateinit var editApiKey: EditText
     private lateinit var editApiBaseUrl: EditText
+    private lateinit var editApiEndpointUrl: EditText
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,8 +33,9 @@ class SettingsActivity : AppCompatActivity() {
         // Initialize views
         editApiKey = findViewById(R.id.editApiKey)
         editApiBaseUrl = findViewById(R.id.editApiBaseUrl)
+        editApiEndpointUrl = findViewById(R.id.editApiEndpointUrl)
         val btnSaveApiSettings = findViewById<Button>(R.id.btnSaveApiSettings)
-        val switchNotifications = findViewById<Switch>(R.id.switchNotifications)
+
       
     
         // Load saved values
@@ -42,13 +45,6 @@ class SettingsActivity : AppCompatActivity() {
         btnSaveApiSettings.setOnClickListener {
             saveApiSettings()
         }
-
-        switchNotifications.setOnCheckedChangeListener { _, isChecked ->
-            // TODO: Implement notifications toggle
-            Toast.makeText(this, "Notifications ${if (isChecked) "enabled" else "disabled"}", Toast.LENGTH_SHORT).show()
-        }
-
-
      
     }
 
@@ -56,12 +52,13 @@ class SettingsActivity : AppCompatActivity() {
         val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         editApiKey.setText(prefs.getString(KEY_API_KEY, ""))
         editApiBaseUrl.setText(prefs.getString(KEY_API_BASE_URL, ""))
+        editApiEndpointUrl.setText(prefs.getString(KEY_API_ENDPOINT_URL, ""))
     }
 
     private fun saveApiSettings() {
         val apiKey = editApiKey.text.toString()
         val apiBaseUrl = editApiBaseUrl.text.toString()
-
+        val apiEndpointUrl = editApiEndpointUrl.text.toString()
         if (apiKey.isBlank() || apiBaseUrl.isBlank()) {
             Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show()
             return
@@ -70,6 +67,7 @@ class SettingsActivity : AppCompatActivity() {
         getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit().apply {
             putString(KEY_API_KEY, apiKey)
             putString(KEY_API_BASE_URL, apiBaseUrl)
+            putString(KEY_API_ENDPOINT_URL, apiEndpointUrl)
             apply()
         }
 
