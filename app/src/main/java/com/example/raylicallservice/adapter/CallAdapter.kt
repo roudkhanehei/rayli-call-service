@@ -33,7 +33,9 @@ import android.view.WindowManager
 class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
     private var calls: List<CallEntity> = emptyList()
     private var filteredCalls: List<CallEntity> = emptyList()
-    private var currentFilter: String? = null
+    private var currentFilter: ((CallEntity) -> Boolean)? = null
+    private var currentCallState: String? = null
+    private var currentCallDirection: String? = null
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
     private var expandedPosition = -1
 
@@ -325,20 +327,32 @@ class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
 
     fun updateCalls(newCalls: List<CallEntity>) {
         calls = newCalls
-        filteredCalls = if (currentFilter == null) {
-            calls
-        } else {
-            calls.filter { it.callState == currentFilter }
-        }
-        notifyDataSetChanged()
+        applyFilters()
     }
 
-    fun filterByCallState(state: String?,calldirection : String?) {
-        currentFilter = state
-        filteredCalls = if (state == null && calldirection == null) {
-            calls
-        } else {
-            calls.filter { it.callState == state && it.callDirection == calldirection }
+    fun filterCalls(predicate: (CallEntity) -> Boolean) {
+        currentFilter = predicate
+        applyFilters()
+    }
+
+    fun clearFilter() {
+        currentFilter = null
+        applyFilters()
+    }
+
+    fun filterByCallState(callState: String?, callDirection: String?) {
+        currentCallState = callState
+        currentCallDirection = callDirection
+        applyFilters()
+    }
+
+    private fun applyFilters() {
+        filteredCalls = calls.filter { call ->
+            val matchesState = currentCallState == null || call.callState == currentCallState
+            val matchesDirection = currentCallDirection == null || call.callDirection == currentCallDirection
+            val matchesSearch = currentFilter == null || currentFilter!!(call)
+            
+            matchesState && matchesDirection && matchesSearch
         }
         notifyDataSetChanged()
     }

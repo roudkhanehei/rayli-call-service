@@ -47,10 +47,15 @@ import kotlinx.coroutines.withContext
 import androidx.appcompat.app.AlertDialog
 import android.provider.ContactsContract
 import android.content.SharedPreferences
+import android.widget.ImageView
+import android.widget.ArrayAdapter
+import androidx.appcompat.widget.SearchView
 
 class MainActivity : AppCompatActivity() {
     private val PERMISSIONS_REQUEST_CODE = 123
     private val OVERLAY_PERMISSION_REQ_CODE = 124
+    private val KEY_SYNC_METHOD = "sync_method"
+
     private val REQUIRED_PERMISSIONS = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         arrayOf(
             Manifest.permission.READ_PHONE_STATE,
@@ -72,6 +77,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var adapter: CallAdapter
     private lateinit var database: AppDatabase
     private lateinit var sharedPreferences: SharedPreferences
+    private var searchView: SearchView? = null
 
     private val callStateReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -91,7 +97,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         // Initialize SharedPreferences
-        sharedPreferences = getSharedPreferences("RayliCallPrefs", Context.MODE_PRIVATE)
+        sharedPreferences = getSharedPreferences("ApiSettings", Context.MODE_PRIVATE)
 
         // Register broadcast receiver with proper flags
         val filter = IntentFilter("CALL_STATE_CHANGED").apply {
@@ -102,7 +108,14 @@ class MainActivity : AppCompatActivity() {
         // Setup toolbar
         setSupportActionBar(binding.toolbar)
         binding.toolbar.setNavigationOnClickListener {
-            makeApiCall()
+            val syncMethod = sharedPreferences.getString(KEY_SYNC_METHOD, "Deative")
+            if (syncMethod == "WordPress") {
+                makeApiCall()
+            } else if (syncMethod == "REST API") {
+                makeCustomerApiCall()
+            } else if (syncMethod == "Deative") {
+                Toast.makeText(this, "Sync method is Deative , if you want to sync data to server go to Settings", Toast.LENGTH_SHORT).show()
+            }
         }
         
         // Update toolbar subtitle
@@ -138,6 +151,31 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.toolbar_menu, menu)
+
+        // Setup search functionality
+        val searchItem = menu.findItem(R.id.action_search)
+        searchView = searchItem.actionView as SearchView
+        searchView?.apply {
+            queryHint = "Search by name, phone, or comment..."
+            setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+                override fun onQueryTextSubmit(query: String?): Boolean {
+                    filterCalls(query)
+                    return true
+                }
+
+                override fun onQueryTextChange(newText: String?): Boolean {
+                    filterCalls(newText)
+                    return true
+                }
+            })
+
+            // Handle search close
+            setOnCloseListener {
+                adapter.clearFilter()
+                true
+            }
+        }
+
         return true
     }
 
@@ -274,9 +312,39 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showSettingsDialog() {
+        val items = arrayOf(
+            "Preferences",
+            "Sync Now",
+            "Clear All Data",
+            "About"
+        )
+        
+        val icons = arrayOf(
+            R.drawable.ic_settings,
+            R.drawable.ic_sync,
+            R.drawable.ic_delete,
+            R.drawable.ic_info
+        )
+
         val dialog = AlertDialog.Builder(this)
             .setTitle("Settings")
-            .setItems(arrayOf("Preferences","Sync Now", "Clear All Data", "About")) { _, which ->
+            .setAdapter(object : ArrayAdapter<String>(
+                this,
+                R.layout.dialog_item_with_icon,
+                items
+            ) {
+                override fun getView(position: Int, convertView: View?, parent: android.view.ViewGroup): View {
+                    val view = convertView ?: layoutInflater.inflate(R.layout.dialog_item_with_icon, parent, false)
+                    
+                    val iconView = view.findViewById<ImageView>(R.id.dialog_item_icon)
+                    val textView = view.findViewById<TextView>(R.id.dialog_item_text)
+                    
+                    iconView.setImageResource(icons[position])
+                    textView.text = items[position]
+                    
+                    return view
+                }
+            }) { _, which ->
                 when (which) {
                     0 -> showPreferencesDialog()
                     1 -> makeApiCall() // Sync Now
@@ -625,7 +693,9 @@ class MainActivity : AppCompatActivity() {
                         is_synced = true
                     )
                     //now send the data to the server
-                    lastResponse = RetrofitClient.getInstance(this@MainActivity).apiService.postCallData(callData)
+
+                    lastResponse = RetrofitClient.getInstance(this@MainActivity)
+                    .apiService.postCallData( "wp-json/rayli-call-manager/v1/receive-call-data", callData)
 
                     if (lastResponse?.isSuccessful == true) {
                         // Update call sync status after successful API call
@@ -676,6 +746,114 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun makeCustomerApiCall() {
+        // Get API endpoint from SharedPreferences
+        val apiEndpoint = sharedPreferences.getString("api_endpoint_url", "") ;
+        
+       
+        // Create and show progress dialog
+        val progressDialog = AlertDialog.Builder(this)
+            .setView(R.layout.progress_dialog)
+            .setCancelable(false)
+            .create()
+        
+        progressDialog.window?.setBackgroundDrawableResource(R.drawable.dialog_background)
+        progressDialog.show()
+
+        // Get reference to progress text
+        val progressTextView = progressDialog.findViewById<TextView>(R.id.syncProgress_text)
+
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                // Get all unsynced calls
+                val unsyncedCalls = database.callDao().getUnsyncedCalls()
+                var syncedCount = 0
+                var lastResponse: retrofit2.Response<ApiResponse>? = null
+                
+                if (unsyncedCalls.isEmpty()) {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(this@MainActivity, "No unsynced calls found", Toast.LENGTH_SHORT).show()
+                    }
+                    progressDialog.dismiss()
+                } else {
+                    // Update their sync status
+                    unsyncedCalls.forEach { call ->            
+                        withContext(Dispatchers.Main) {
+                            progressTextView?.text = "Syncing call ${syncedCount + 1} of ${unsyncedCalls.size}..."
+                        }
+                
+                        // Convert CallEntity to CallData
+                        val callData = CallData(
+                            call_id = call.callId.toString(),
+                            caller_number = call.phoneNumber ?: "",
+                            call_duration = call.duration ?: 0,
+                            call_status = call.callState,
+                            call_date = convertTimestampToDate(call.timestamp).toString(),
+                            customer_name = call.customerName ?: "",
+                            products_id = call.productsId ?: "0",
+                            description = call.description ?: "", 
+                            organization = call.organization ?: "",
+                            customer_id = call.customerId?.toLong() ?: 0,
+                            simcart = call.simcart ?: "",
+                            sim_number = call.sim_number ?: "",
+                            sim_slot = call.sim_slot?.toString() ?: "",
+                            issue = call.issue?.toString() ?: "",
+                            additional_data = "",
+                            imei = call.imei ?: "",
+                            call_direction = call.callDirection ?: "",
+                            is_synced = true
+                        )
+                        //now send the data to the server using the dynamic endpoint
+                        lastResponse = RetrofitClient.getInstance(this@MainActivity).apiService.postCallData(apiEndpoint.toString(), callData)
+
+                        if (lastResponse?.isSuccessful == true) {
+                            // Update call sync status after successful API call
+                            database.callDao().updateCallSyncStatus(call.callId, true)
+                        }
+                     
+                        syncedCount++
+                    }
+                
+                    withContext(Dispatchers.Main) {
+                        // Dismiss progress dialog
+                        progressDialog.dismiss()
+                        
+                        if (lastResponse?.isSuccessful == true) {
+                            // Save sync time after successful API call
+                            saveLastSyncDate()
+                            // Update toolbar subtitle
+                            updateToolbarSubtitle()
+                            
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(
+                                    this@MainActivity,
+                                    "Call data sent successfully: ${lastResponse?.body()?.message}",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        } else {
+                            Toast.makeText(
+                                this@MainActivity,
+                                "Failed to send call data: ${lastResponse?.code()}",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    // Dismiss progress dialog
+                    progressDialog.dismiss()
+                    
+                    Toast.makeText(
+                        this@MainActivity,
+                        "Error: ${e.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+    }
     override fun onResume() {
         super.onResume()
         // Check permissions again when returning to the app
@@ -691,6 +869,24 @@ class MainActivity : AppCompatActivity() {
             return englishFormat.format(timestamp)
         } catch (e: Exception) {
             return "Invalid Date"
+        }
+    }
+
+    private fun filterCalls(query: String?) {
+        if (query.isNullOrBlank()) {
+            adapter.clearFilter()
+            return
+        }
+
+        val searchQuery = query.lowercase()
+        adapter.filterCalls { call ->
+            val customerName = call.customerName?.lowercase() ?: ""
+            val phoneNumber = call.phoneNumber?.lowercase() ?: ""
+            val description = call.description?.lowercase() ?: ""
+
+            customerName.contains(searchQuery) ||
+            phoneNumber.contains(searchQuery) ||
+            description.contains(searchQuery)
         }
     }
 }

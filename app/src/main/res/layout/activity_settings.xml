@@ -22,92 +22,112 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-            <LinearLayout
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:layout_marginBottom="16dp"
+                android:text="Send Data to Server"
+                android:textColor="#2196F3"
+                android:textSize="18sp"
+                android:textStyle="bold" />
 
-                <TextView
+            <Spinner
+                android:id="@+id/sync2ServerMethod"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:text="API Configuration"
+                android:textColor="#2196F3"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:hint="Wordpress API Secret Key">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/editApiKey"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:hint="Worpress Base URL">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/editApiBaseUrl"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="API Configuration"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:textColor="#2196F3"
-                    android:layout_marginBottom="16dp"/>
-
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_marginBottom="16dp"
-                    android:hint="Wordpress API Secret Key">
+                    android:inputType="textUri" />
 
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/editApiKey"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"/>
+            </com.google.android.material.textfield.TextInputLayout>
 
-                </com.google.android.material.textfield.TextInputLayout>
+            <TextView
+                android:id="@+id/WpDescriptiontextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:text="@string/WpDescriptiontextView" />
 
-                <com.google.android.material.textfield.TextInputLayout
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:text="Your Restfull API URL"
+                android:textColor="#2196F3"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:hint="Enter your endpoint URL">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/editApiEndpointUrl"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                    android:layout_marginBottom="16dp"
-                    android:hint="Worpress Base URL">
+                    android:layout_height="wrap_content" />
 
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/editApiBaseUrl"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="textUri"/>
+            </com.google.android.material.textfield.TextInputLayout>
 
-                </com.google.android.material.textfield.TextInputLayout>
-                <TextView
-                    android:id="@+id/WpDescriptiontextView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/WpDescriptiontextView"
-                    android:layout_marginBottom="16dp"/>
+            <TextView
+                android:id="@+id/EndpointUrlView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:text="@string/EndpointUrl" />
 
-                                    <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Your Restfull API URL"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:textColor="#2196F3"
-                    android:layout_marginBottom="16dp"/>
+            <Button
+                android:id="@+id/btnSaveApiSettings"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                        android:background="@drawable/button_background"
+                android:layout_marginBottom="8dp"
+                android:text="Save API Settings" />
 
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                    android:layout_marginBottom="16dp"
-                    android:hint="Enter your endpoint URL">
 
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/editApiEndpointUrl"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"/>
-
-                </com.google.android.material.textfield.TextInputLayout>
-<TextView
-                    android:id="@+id/EndpointUrlView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/EndpointUrl"
-                    android:layout_marginBottom="16dp"/>
-                <Button
-                    android:id="@+id/btnSaveApiSettings"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Save API Settings"
-                    android:layout_marginBottom="8dp"/>
-
-            </LinearLayout>
+        </LinearLayout>
 
      
 
