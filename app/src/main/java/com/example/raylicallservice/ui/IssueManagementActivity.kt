@@ -165,7 +165,6 @@ class IssueManagementActivity : AppCompatActivity() {
                 lifecycleScope.launch {
                     val lastOrder = issueDao.getMaxOrder() ?: -1
                     val issue = IssueEntity(
-                        issueID = UUID.randomUUID().toString(),
                         issueName = name,
                         issueCode = "0",
                         issueStatus = "1",

@@ -15,7 +15,6 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.example.raylicallservice.R
 import com.example.raylicallservice.data.CallEntity
-import com.example.raylicallservice.data.IssueType
 import java.text.SimpleDateFormat
 import java.util.Locale
 import kotlinx.coroutines.CoroutineScope
@@ -181,7 +180,7 @@ class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
             )
             
             // Set dialog position to bottom
-            setGravity(Gravity.BOTTOM)
+            setGravity(Gravity.TOP)
             
             // Handle keyboard properly
             setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or 
@@ -205,22 +204,6 @@ class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
         val organizationEditText = dialogView.findViewById<EditText>(R.id.dialogOrganization)
         organizationEditText.setText(call.organization ?: "")
 
-        val issueSpinner = dialogView.findViewById<Spinner>(R.id.dialogIssueSpinner)
-        val issueAdapter = ArrayAdapter(
-            context,
-            R.layout.spinner_item,
-            IssueType.values()
-        )
-        issueAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
-        issueSpinner.adapter = issueAdapter
-        
-        // Set the current issue if it exists
-        call.issue?.let { currentIssue ->
-            val position = IssueType.values().indexOf(currentIssue)
-            if (position != -1) {
-                issueSpinner.setSelection(position)
-            }
-        }
 
         dialog.setView(dialogView)
 
@@ -232,13 +215,11 @@ class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
             val newDescription = descriptionEditText.text.toString()
             val newCustomerName = customerNameEditText.text.toString()
             val newOrganization = organizationEditText.text.toString()
-            val selectedIssue = issueSpinner.selectedItem as IssueType
-
+     
             val updatedCall = call.copy(
                 customerName = newCustomerName,
                 organization = newOrganization,
-                description = newDescription,
-                issue = selectedIssue
+                description = newDescription,        
             )
             
             // Update the call in the database
