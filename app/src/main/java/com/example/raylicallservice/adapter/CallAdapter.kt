@@ -27,6 +27,10 @@ import android.widget.ArrayAdapter
 import android.graphics.Color
 import android.view.Gravity
 import android.view.WindowManager
+import android.widget.AutoCompleteTextView
+import com.google.android.material.textfield.TextInputEditText
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.first
 
 
 class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
@@ -170,68 +174,84 @@ class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
         val dialog = AlertDialog.Builder(context, R.style.CustomDialog)
             .setView(R.layout.dialog_call_details)
             .create()
-
-        // Set dialog window attributes to adjust for keyboard
-        dialog.window?.apply {
-            // Make dialog full width
-            setLayout(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            )
-            
-            // Set dialog position to bottom
-            setGravity(Gravity.TOP)
-            
-            // Handle keyboard properly
-            setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or 
-                           WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
-            
-            // Set dialog background to be transparent
-            setBackgroundDrawableResource(R.drawable.dialog_background)
-        }
-
-        val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_call_details, null)
         
-        dialogView.findViewById<TextView>(R.id.dialogPhoneNumber).text = 
-            "Phone: ${call.phoneNumber ?: "Unknown"}"
-
-        val descriptionEditText = dialogView.findViewById<EditText>(R.id.dialogDescription)
-        descriptionEditText.setText(call.description ?: "")
-
-        val customerNameEditText = dialogView.findViewById<EditText>(R.id.dialogCustomerName)
-        customerNameEditText.setText(call.customerName ?: "")
-
-        val organizationEditText = dialogView.findViewById<EditText>(R.id.dialogOrganization)
-        organizationEditText.setText(call.organization ?: "")
-
-
-        dialog.setView(dialogView)
-
-        dialogView.findViewById<View>(R.id.dialogButton).setOnClickListener {
-            dialog.dismiss()
-        }
-
-        dialogView.findViewById<View>(R.id.dialogSaveButton).setOnClickListener {
-            val newDescription = descriptionEditText.text.toString()
-            val newCustomerName = customerNameEditText.text.toString()
-            val newOrganization = organizationEditText.text.toString()
-     
-            val updatedCall = call.copy(
-                customerName = newCustomerName,
-                organization = newOrganization,
-                description = newDescription,        
-            )
-            
-            // Update the call in the database
-            CoroutineScope(Dispatchers.IO).launch {
-                val database = AppDatabase.getDatabase(context)
-                database.callDao().insertCall(updatedCall)
-            }
-            
-            dialog.dismiss()
-        }
-
+        dialog.window?.setBackgroundDrawableResource(R.drawable.dialog_background)
         dialog.show()
+
+        // Get references to views
+        val phoneNumberText = dialog.findViewById<TextView>(R.id.dialogPhoneNumber)
+        val customerNameInput = dialog.findViewById<TextInputEditText>(R.id.dialogCustomerName)
+        val organizationInput = dialog.findViewById<TextInputEditText>(R.id.dialogOrganization)
+        val descriptionInput = dialog.findViewById<TextInputEditText>(R.id.dialogDescription)
+        val issueSpinner = dialog.findViewById<AutoCompleteTextView>(R.id.issueSpinner)
+        val saveButton = dialog.findViewById<Button>(R.id.dialogSaveButton)
+        val closeButton = dialog.findViewById<Button>(R.id.dialogButton)
+        val dialogTitle = dialog.findViewById<TextView>(R.id.dialogTitle)
+
+        // Set initial values
+        dialogTitle?.text = call.phoneNumber
+        customerNameInput?.setText(call.customerName)
+        organizationInput?.setText(call.organization)
+        descriptionInput?.setText(call.description)
+
+        // Initialize database
+        val database = AppDatabase.getDatabase(context)
+        val issueDao = database.issueDao()
+
+        // Populate issue spinner
+        CoroutineScope(Dispatchers.IO).launch {
+            val issues = issueDao.getAllIssues().first()
+            withContext(Dispatchers.Main) {
+                val adapter = ArrayAdapter(
+                    context,
+                    android.R.layout.simple_dropdown_item_1line,
+                    issues.map { it.issueName }
+                )
+                issueSpinner?.setAdapter(adapter)
+
+                // Set selected issue if exists
+                if (call.issueId > 0) {
+                    val selectedIssue = issues.find { it.issueID == call.issueId }
+                    selectedIssue?.let {
+                        issueSpinner?.setText(it.issueName, false)
+                    }
+                }
+            }
+        }
+
+        // Handle save button click
+        saveButton?.setOnClickListener {
+            val customerName = customerNameInput?.text?.toString()
+            val organization = organizationInput?.text?.toString()
+            val description = descriptionInput?.text?.toString()
+            
+            // Get selected issue ID
+            var selectedIssueId: Long = 0
+            CoroutineScope(Dispatchers.IO).launch {
+                val issues = issueDao.getAllIssues().first()
+                val selectedIssueName = issueSpinner?.text?.toString()
+                val selectedIssue = issues.find { it.issueName == selectedIssueName }
+                selectedIssueId = selectedIssue?.issueID ?: 0
+
+                // Update call in database
+                val updatedCall = call.copy(
+                    customerName = customerName,
+                    organization = organization,
+                    description = description,
+                    issueId = selectedIssueId
+                )
+                database.callDao().updateCall(updatedCall)
+                
+                withContext(Dispatchers.Main) {
+                    dialog.dismiss()
+                }
+            }
+        }
+
+        // Handle close button click
+        closeButton?.setOnClickListener {
+            dialog.dismiss()
+        }
     }
 
     private fun showWhatsAppNotInstalledDialog(context: Context) {

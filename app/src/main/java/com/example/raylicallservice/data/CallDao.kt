@@ -35,4 +35,7 @@ interface CallDao {
 
     @Query("UPDATE calls SET isSynced = :isSynced WHERE callId = :callId")
     suspend fun updateCallSyncStatus(callId: String, isSynced: Boolean)
+
+    @Update
+    suspend fun updateCall(call: CallEntity)
 } 
