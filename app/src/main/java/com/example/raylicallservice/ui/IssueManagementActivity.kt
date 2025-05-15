@@ -1,8 +1,11 @@
 package com.example.raylicallservice.ui
 
 import android.os.Bundle
+import android.view.Menu
+import android.view.MenuItem
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SearchView
 import androidx.appcompat.widget.Toolbar
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
@@ -21,6 +24,7 @@ import java.util.UUID
 class IssueManagementActivity : AppCompatActivity() {
     private lateinit var issueDao: IssueDao
     private lateinit var adapter: IssueAdapter
+    private var allIssues: List<IssueEntity> = emptyList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,6 +45,37 @@ class IssueManagementActivity : AppCompatActivity() {
         setupRecyclerView()
         setupFab()
         observeIssues()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.menu_issue_management, menu)
+        
+        val searchItem = menu.findItem(R.id.action_search)
+        val searchView = searchItem.actionView as SearchView
+        
+        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                return false
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                filterIssues(newText)
+                return true
+            }
+        })
+        
+        return true
+    }
+
+    private fun filterIssues(query: String?) {
+        if (query.isNullOrBlank()) {
+            adapter.updateIssues(allIssues)
+        } else {
+            val filteredList = allIssues.filter { 
+                it.issueName.contains(query, ignoreCase = true) 
+            }
+            adapter.updateIssues(filteredList)
+        }
     }
 
     override fun onSupportNavigateUp(): Boolean {
@@ -98,6 +133,7 @@ class IssueManagementActivity : AppCompatActivity() {
     private fun observeIssues() {
         lifecycleScope.launch {
             issueDao.getAllIssues().collectLatest { issues ->
+                allIssues = issues
                 adapter.updateIssues(issues)
             }
         }
