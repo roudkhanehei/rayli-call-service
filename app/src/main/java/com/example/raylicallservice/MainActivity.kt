@@ -50,6 +50,7 @@ import android.content.SharedPreferences
 import android.widget.ImageView
 import android.widget.ArrayAdapter
 import androidx.appcompat.widget.SearchView
+import com.example.raylicallservice.ui.IssueManagementActivity
 
 class MainActivity : AppCompatActivity() {
     private val PERMISSIONS_REQUEST_CODE = 123
@@ -314,12 +315,14 @@ class MainActivity : AppCompatActivity() {
     private fun showSettingsDialog() {
         val items = arrayOf(
             "Preferences",
+            "Issue Management",
             "Sync Now",
             "Clear All Data",
             "About"
         )
         
         val icons = arrayOf(
+            R.drawable.ic_settings,
             R.drawable.ic_settings,
             R.drawable.ic_sync,
             R.drawable.ic_delete,
@@ -347,9 +350,10 @@ class MainActivity : AppCompatActivity() {
             }) { _, which ->
                 when (which) {
                     0 -> showPreferencesDialog()
-                    1 -> makeApiCall() // Sync Now
-                    2 -> showClearDataConfirmation() // Clear All Data
-                    3 -> showAboutDialog() // About
+                    1 -> showIssueManagementDialog()
+                    2 -> makeApiCall() // Sync Now
+                    3 -> showClearDataConfirmation() // Clear All Data
+                    4 -> showAboutDialog() // About
                 }
             }
             .create()
@@ -362,6 +366,12 @@ class MainActivity : AppCompatActivity() {
        Intent(this, SettingsActivity::class.java).apply {
         startActivity(this)
        }
+    }
+
+    private fun showIssueManagementDialog() {
+        Intent(this, IssueManagementActivity::class.java).apply {
+            startActivity(this)
+        }
     }
 
     private fun showClearDataConfirmation() {
@@ -692,6 +702,7 @@ class MainActivity : AppCompatActivity() {
                         call_direction = call.callDirection ?: "",
                         is_synced = true
                     )
+
                     //now send the data to the server
 
                     lastResponse = RetrofitClient.getInstance(this@MainActivity)
