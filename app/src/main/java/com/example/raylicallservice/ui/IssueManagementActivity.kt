@@ -3,6 +3,7 @@ package com.example.raylicallservice.ui
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
@@ -25,6 +26,7 @@ class IssueManagementActivity : AppCompatActivity() {
     private lateinit var issueDao: IssueDao
     private lateinit var adapter: IssueAdapter
     private var allIssues: List<IssueEntity> = emptyList()
+    private lateinit var emptyStateContainer: View
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,6 +40,9 @@ class IssueManagementActivity : AppCompatActivity() {
             setDisplayShowHomeEnabled(true)
             title = "Issue Management"
         }
+
+        // Initialize views
+        emptyStateContainer = findViewById(R.id.emptyStateContainer)
 
         // Initialize DAO from database
         issueDao = AppDatabase.getDatabase(applicationContext).issueDao()
@@ -70,11 +75,13 @@ class IssueManagementActivity : AppCompatActivity() {
     private fun filterIssues(query: String?) {
         if (query.isNullOrBlank()) {
             adapter.updateIssues(allIssues)
+            updateEmptyStateVisibility(allIssues.isEmpty())
         } else {
             val filteredList = allIssues.filter { 
                 it.issueName.contains(query, ignoreCase = true) 
             }
             adapter.updateIssues(filteredList)
+            updateEmptyStateVisibility(filteredList.isEmpty())
         }
     }
 
@@ -135,8 +142,13 @@ class IssueManagementActivity : AppCompatActivity() {
             issueDao.getAllIssues().collectLatest { issues ->
                 allIssues = issues
                 adapter.updateIssues(issues)
+                updateEmptyStateVisibility(issues.isEmpty())
             }
         }
+    }
+
+    private fun updateEmptyStateVisibility(isEmpty: Boolean) {
+        emptyStateContainer.visibility = if (isEmpty) View.VISIBLE else View.GONE
     }
 
     private fun showAddDialog() {
@@ -202,7 +214,7 @@ class IssueManagementActivity : AppCompatActivity() {
     }
 
     private fun showDeleteConfirmation(issue: IssueEntity) {
-        AlertDialog.Builder(this)
+        val dialog = AlertDialog.Builder(this)
             .setTitle("Delete Issue")
             .setMessage("Are you sure you want to delete this issue?")
             .setPositiveButton("Delete") { _, _ ->
@@ -211,6 +223,9 @@ class IssueManagementActivity : AppCompatActivity() {
                 }
             }
             .setNegativeButton("Cancel", null)
-            .show()
+            .create()
+
+        dialog.window?.setBackgroundDrawableResource(R.drawable.dialog_background)
+        dialog.show()
     }
 } 

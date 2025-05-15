@@ -51,11 +51,14 @@ import android.widget.ImageView
 import android.widget.ArrayAdapter
 import androidx.appcompat.widget.SearchView
 import com.example.raylicallservice.ui.IssueManagementActivity
+import androidx.appcompat.app.AppCompatDelegate
 
 class MainActivity : AppCompatActivity() {
     private val PERMISSIONS_REQUEST_CODE = 123
     private val OVERLAY_PERMISSION_REQ_CODE = 124
     private val KEY_SYNC_METHOD = "sync_method"
+    private val KEY_DARK_MODE = "dark_mode"
+    private val PREF_NAME = "app_settings"
 
     private val REQUIRED_PERMISSIONS = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         arrayOf(
@@ -89,6 +92,17 @@ class MainActivity : AppCompatActivity() {
                     Log.e("MainActivity", "Error updating chart: ${e.message}")
                 }
             }
+        }
+    }
+
+    private fun initializeTheme() {
+        val isDarkMode = getSharedPreferences(PREF_NAME, MODE_PRIVATE)
+            .getBoolean(KEY_DARK_MODE, false)
+        
+        if (isDarkMode) {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+        } else {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
         }
     }
 
@@ -139,6 +153,9 @@ class MainActivity : AppCompatActivity() {
             )
             startActivityForResult(intent, OVERLAY_PERMISSION_REQ_CODE)
         }
+
+        // Initialize theme
+        initializeTheme()
     }
 
     override fun onDestroy() {

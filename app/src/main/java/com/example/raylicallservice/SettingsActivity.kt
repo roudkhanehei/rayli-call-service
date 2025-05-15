@@ -9,6 +9,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import android.widget.Spinner
 import android.widget.ArrayAdapter
+import android.view.MenuItem
+import androidx.appcompat.app.AppCompatDelegate
+import com.google.android.material.switchmaterial.SwitchMaterial
 
 class SettingsActivity : AppCompatActivity() {
     companion object {
@@ -17,12 +20,15 @@ class SettingsActivity : AppCompatActivity() {
         private const val KEY_API_BASE_URL = "api_base_url"
         private const val KEY_API_ENDPOINT_URL = "api_endpoint_url"
         private const val KEY_SYNC_METHOD = "sync_method"
+        private const val PREF_NAME = "app_settings"
+        private const val KEY_DARK_MODE = "dark_mode"
     }
 
     private lateinit var editApiKey: EditText
     private lateinit var editApiBaseUrl: EditText
     private lateinit var editApiEndpointUrl: EditText
     private lateinit var syncMethodSpinner: Spinner
+    private lateinit var themeSwitch: SwitchMaterial
 
     private val syncMethods = arrayOf(
         "Deative",
@@ -61,6 +67,7 @@ class SettingsActivity : AppCompatActivity() {
         editApiEndpointUrl = findViewById(R.id.editApiEndpointUrl)
         syncMethodSpinner = findViewById(R.id.sync2ServerMethod)
         val btnSaveApiSettings = findViewById<Button>(R.id.btnSaveApiSettings)
+        themeSwitch = findViewById(R.id.themeSwitch)
 
         // Setup spinner
         setupSyncMethodSpinner()
@@ -72,6 +79,10 @@ class SettingsActivity : AppCompatActivity() {
         btnSaveApiSettings.setOnClickListener {
             saveApiSettings()
         }
+
+        // Initialize theme switch
+        loadThemePreference()
+        setupThemeSwitch()
     }
 
     private fun setupSyncMethodSpinner() {
@@ -131,4 +142,35 @@ class SettingsActivity : AppCompatActivity() {
         onBackPressed()
         return true
     }
+
+    private fun loadThemePreference() {
+        val isDarkMode = getSharedPreferences(PREF_NAME, MODE_PRIVATE)
+            .getBoolean(KEY_DARK_MODE, false)
+        themeSwitch.isChecked = isDarkMode
+        updateTheme(isDarkMode)
+    }
+
+    private fun setupThemeSwitch() {
+        themeSwitch.setOnCheckedChangeListener { _, isChecked ->
+            updateTheme(isChecked)
+            saveThemePreference(isChecked)
+        }
+    }
+
+    private fun updateTheme(isDarkMode: Boolean) {
+        if (isDarkMode) {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+        } else {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+        }
+    }
+
+    private fun saveThemePreference(isDarkMode: Boolean) {
+        getSharedPreferences(PREF_NAME, MODE_PRIVATE).edit().apply {
+            putBoolean(KEY_DARK_MODE, isDarkMode)
+            apply()
+        }
+    }
+
+
 } 
