@@ -32,10 +32,7 @@
                 android:id="@+id/filter_outgoing"
                 android:title="Outgoing Calls"
                 app:showAsAction="never" />
-            <item
-                android:id="@+id/filter_incoming"
-                android:title="Incoming Calls"
-                app:showAsAction="never" />
+           
         </menu>
     </item>
 

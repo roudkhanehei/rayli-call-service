@@ -3,13 +3,17 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="4dp"
+    android:layout_margin="8dp"
     app:cardCornerRadius="8dp"
-    app:cardElevation="4dp">
+    app:cardBackgroundColor="@color/cardBackground"
+    app:cardElevation="2dp"
+    app:strokeWidth="2dp"
+    app:strokeColor="#CCCCCC">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+       
         android:padding="16dp">
 
         <ImageView
@@ -24,6 +28,7 @@
 
         <TextView
             android:id="@+id/tvIssueName"
+            android:fontFamily="@font/iranyekan"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"

@@ -220,10 +220,7 @@ class MainActivity : AppCompatActivity() {
                 adapter.filterByCallState("ENDED","OUTGOING")
                 true
             }
-            R.id.filter_incoming -> {
-                adapter.filterByCallState("ENDED","INCOMING")
-                true
-            }
+
             else -> super.onOptionsItemSelected(item)
         }
     }

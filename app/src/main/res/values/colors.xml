@@ -9,14 +9,16 @@
     <color name="colorPrimaryDark">#1976D2</color>
     <color name="colorAccent">#03A9F4</color>
 
+    <color name="cardBackground">#DCEFFD</color>
+
     <!-- Text colors -->
     <color name="text_primary">#212121</color>
     <color name="text_secondary">#757575</color>
     <color name="text_hint">#BDBDBD</color>
 
     <!-- Background colors -->
-    <color name="background">#FFFFFF</color>
-    <color name="surface">#FFFFFF</color>
+    <color name="background">#EBEBEB</color>
+    <color name="surface">#F3F3F3</color>
     <color name="error">#B00020</color>
 
     <!-- Status colors -->

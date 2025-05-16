@@ -44,7 +44,7 @@ class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
 
     class CallViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         
-        val phoneNumberText: TextView = view.findViewById(R.id.phoneNumberText)
+     
         val timestampText: TextView = view.findViewById(R.id.timestampText)
         val durationText: TextView = view.findViewById(R.id.durationText)
         //val callStateIcon: ImageView = view.findViewById(R.id.callStateIcon)
@@ -70,7 +70,7 @@ class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
 
     override fun onBindViewHolder(holder: CallViewHolder, position: Int) {
         val call = filteredCalls[position]
-        holder.phoneNumberText.text = call.phoneNumber ?: "Unknown Number"
+       
         holder.timestampText.text = dateFormat.format(call.timestamp)
         holder.durationText.text = formatDuration(call.duration)
         holder.callDirectionIcon.setImageResource(if (call.callDirection == "INCOMING") R.drawable.ic_call_incoming else R.drawable.ic_call_outgoing)
@@ -179,7 +179,7 @@ class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
         dialog.show()
 
         // Get references to views
-        val phoneNumberText = dialog.findViewById<TextView>(R.id.dialogPhoneNumber)
+      
         val customerNameInput = dialog.findViewById<TextInputEditText>(R.id.dialogCustomerName)
         val organizationInput = dialog.findViewById<TextInputEditText>(R.id.dialogOrganization)
         val descriptionInput = dialog.findViewById<TextInputEditText>(R.id.dialogDescription)

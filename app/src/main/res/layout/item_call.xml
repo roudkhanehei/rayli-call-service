@@ -59,7 +59,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:ellipsize="end"
-
+                        android:fontFamily="@font/iranyekan"
                         android:gravity="end"
                         android:maxWidth="150dp"
                         android:maxLines="1"
@@ -160,6 +160,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:ellipsize="end"
+                    android:fontFamily="@font/iranyekan"
                     android:gravity="end"
                     android:maxWidth="200dp"
                     android:maxLines="1"
@@ -175,7 +176,7 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="8dp"
-            android:background="#e6e7e8"
+            android:background="@color/light_gray"
             android:visibility="gone">
 
             <LinearLayout
