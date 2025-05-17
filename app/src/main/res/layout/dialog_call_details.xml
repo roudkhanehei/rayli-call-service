@@ -40,6 +40,7 @@
             android:hint="Select Issue">
 
             <AutoCompleteTextView
+                android:textSize="14dp"
                 android:id="@+id/issueSpinner"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -56,6 +57,7 @@
             android:hint="Customer name">
 
             <com.google.android.material.textfield.TextInputEditText
+                android:textSize="14dp"
                 android:id="@+id/dialogCustomerName"
                 android:fontFamily="@font/iranyekan"
                 android:layout_width="match_parent"
@@ -71,6 +73,7 @@
             android:hint="Organization">
 
             <com.google.android.material.textfield.TextInputEditText
+                android:textSize="14dp"
                 android:id="@+id/dialogOrganization"
                 android:layout_width="match_parent"
                 android:fontFamily="@font/iranyekan"
@@ -86,6 +89,7 @@
             android:hint="Description">
 
             <com.google.android.material.textfield.TextInputEditText
+                android:textSize="14dp"
                 android:id="@+id/dialogDescription"
                 android:fontFamily="@font/iranyekan"
                 android:layout_width="match_parent"

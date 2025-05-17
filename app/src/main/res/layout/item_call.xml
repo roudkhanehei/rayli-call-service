@@ -64,7 +64,7 @@
                         android:maxWidth="150dp"
                         android:maxLines="1"
                         android:paddingStart="8dp"
-                        android:textSize="14sp" />
+                        android:textSize="12sp" />
 
                     <ImageView
                         android:layout_width="16dp"
@@ -151,7 +151,7 @@
                         android:ellipsize="end"
                         android:gravity="end"
                         android:maxLines="1"
-                        android:textSize="14sp"
+                        android:textSize="12sp"
                         android:textStyle="italic" />
                 </LinearLayout>
 

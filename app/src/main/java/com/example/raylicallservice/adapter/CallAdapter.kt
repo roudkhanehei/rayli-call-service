@@ -31,6 +31,8 @@ import android.widget.AutoCompleteTextView
 import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.first
+import android.content.res.Resources
+import androidx.core.content.res.ResourcesCompat
 
 
 class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
@@ -47,6 +49,7 @@ class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
      
         val timestampText: TextView = view.findViewById(R.id.timestampText)
         val durationText: TextView = view.findViewById(R.id.durationText)
+        val phoneNumberText: TextView = view.findViewById(R.id.phoneNumberText)
         //val callStateIcon: ImageView = view.findViewById(R.id.callStateIcon)
         val customerNameText: TextView = view.findViewById(R.id.customerNameText)
         val descriptionText: TextView = view.findViewById(R.id.descriptionText)
@@ -72,6 +75,7 @@ class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
         val call = filteredCalls[position]
        
         holder.timestampText.text = dateFormat.format(call.timestamp)
+        holder.phoneNumberText.text = call.phoneNumber
         holder.durationText.text = formatDuration(call.duration)
         holder.callDirectionIcon.setImageResource(if (call.callDirection == "INCOMING") R.drawable.ic_call_incoming else R.drawable.ic_call_outgoing)
         holder.syncedIcon.setImageResource(if (call.isSynced) R.drawable.ic_synced else R.drawable.ic_synced)
@@ -188,6 +192,9 @@ class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
         val closeButton = dialog.findViewById<Button>(R.id.dialogButton)
         val dialogTitle = dialog.findViewById<TextView>(R.id.dialogTitle)
 
+        // Set font family for AutoCompleteTextView
+        issueSpinner?.typeface = ResourcesCompat.getFont(context, R.font.iranyekan)
+
         // Set initial values
         dialogTitle?.text = call.phoneNumber
         customerNameInput?.setText(call.customerName)
@@ -202,11 +209,28 @@ class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
         CoroutineScope(Dispatchers.IO).launch {
             val issues = issueDao.getAllIssues().first()
             withContext(Dispatchers.Main) {
-                val adapter = ArrayAdapter(
+                // Create custom adapter with custom layout
+                val adapter = object : ArrayAdapter<String>(
                     context,
-                    android.R.layout.simple_dropdown_item_1line,
+                    R.layout.dropdown_item,
                     issues.map { it.issueName }
-                )
+                ) {
+                    override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                        val view = super.getView(position, convertView, parent)
+                        val textView = view.findViewById<TextView>(R.id.text1)
+                        textView.typeface = ResourcesCompat.getFont(context, R.font.iranyekan)
+                        textView.textSize = 14f
+                        return view
+                    }
+
+                    override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
+                        val view = super.getDropDownView(position, convertView, parent)
+                        val textView = view.findViewById<TextView>(R.id.text1)
+                        textView.typeface = ResourcesCompat.getFont(context, R.font.iranyekan)
+                        textView.textSize = 14f
+                        return view
+                    }
+                }
                 issueSpinner?.setAdapter(adapter)
 
                 // Set selected issue if exists

@@ -44,9 +44,12 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
             android:background="@color/white"
-            android:padding="16dp">
+            android:orientation="vertical"
+            android:paddingLeft="10dp"
+            android:paddingTop="6dp"
+            android:paddingRight="10dp"
+            android:paddingBottom="10dp">
 
             <!-- Add your daily statistics views here -->
 
@@ -63,7 +66,7 @@
             <com.github.mikephil.charting.charts.BarChart
                 android:id="@+id/weeklyCallsChart"
                 android:layout_width="match_parent"
-                android:layout_height="200dp"
+                android:layout_height="180dp"
                 android:layout_marginTop="2dp" />
 
             <com.google.android.material.card.MaterialCardView
