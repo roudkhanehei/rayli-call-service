@@ -15,6 +15,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import com.example.raylicallservice.adapter.CallAdapter
 import com.example.raylicallservice.data.AppDatabase
+import com.example.raylicallservice.data.IssueEntity
 import com.example.raylicallservice.databinding.ActivityMainBinding
 import com.example.raylicallservice.service.IncomingCallService
 import com.github.mikephil.charting.components.XAxis
@@ -52,6 +53,10 @@ import android.widget.ArrayAdapter
 import androidx.appcompat.widget.SearchView
 import com.example.raylicallservice.ui.IssueManagementActivity
 import androidx.appcompat.app.AppCompatDelegate
+import android.content.DialogInterface
+import android.widget.AutoCompleteTextView
+import kotlinx.coroutines.flow.first
+import android.view.Gravity
 
 class MainActivity : AppCompatActivity() {
     private val PERMISSIONS_REQUEST_CODE = 123
@@ -129,7 +134,7 @@ class MainActivity : AppCompatActivity() {
             } else if (syncMethod == "REST API") {
                 makeCustomerApiCall()
             } else if (syncMethod == "Deative") {
-                Toast.makeText(this, "Sync method is Deative , if you want to sync data to server go to Settings", Toast.LENGTH_SHORT).show()
+                showCustomToast( "Sync method is Deative , if you want to sync data to server go to Settings")
             }
         }
         
@@ -198,6 +203,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        Log.d("MainActivity", "Menu item clicked: ${item.itemId}")
         return when (item.itemId) {
             R.id.action_settings -> {
                 // Handle settings click
@@ -205,23 +211,35 @@ class MainActivity : AppCompatActivity() {
                 true
             }
             R.id.filter_all -> {
+                Log.d("MainActivity", "Filter all clicked")
                 adapter.filterByCallState(null,null)
+                adapter.filterByIssueId(null)
                 true
             }
             R.id.filter_missed -> {
+                Log.d("MainActivity", "Filter missed clicked")
                 adapter.filterByCallState("MISSED","INCOMING")
                 true
             }
             R.id.filter_answered -> {
+                Log.d("MainActivity", "Filter answered clicked")
                 adapter.filterByCallState("ENDED","INCOMING")
                 true
             }
             R.id.filter_outgoing -> {
+                Log.d("MainActivity", "Filter outgoing clicked")
                 adapter.filterByCallState("ENDED","OUTGOING")
                 true
             }
-
-            else -> super.onOptionsItemSelected(item)
+            R.id.filter_by_issue -> {
+                Log.d("MainActivity", "Filter by issue clicked")
+                showIssueFilterDialog()
+                true
+            }
+            else -> {
+                Log.d("MainActivity", "Unknown menu item clicked")
+                super.onOptionsItemSelected(item)
+            }
         }
     }
 
@@ -395,7 +413,7 @@ class MainActivity : AppCompatActivity() {
             .setPositiveButton("Clear") { _, _ ->
                 lifecycleScope.launch {
                     database.callDao().deleteAllCalls()
-                    Toast.makeText(this@MainActivity, "All data cleared", Toast.LENGTH_SHORT).show()
+                    showCustomToast( "All data cleared")
                 }
             }
             .setNegativeButton("Cancel", null)
@@ -416,7 +434,7 @@ class MainActivity : AppCompatActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == OVERLAY_PERMISSION_REQ_CODE) {
             if (!Settings.canDrawOverlays(this)) {
-                Toast.makeText(this, "Overlay permission is required for call notifications", Toast.LENGTH_LONG).show()
+                showCustomToast( "Overlay permission is required for call notifications")
             }
         }
     }
@@ -681,7 +699,7 @@ class MainActivity : AppCompatActivity() {
                 
                 if (unsyncedCalls.isEmpty()) {
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(this@MainActivity, "No unsynced calls found", Toast.LENGTH_SHORT).show()
+                       showCustomToast("No unsynced calls found")
                     }
                     progressDialog.dismiss()
                 }else{
@@ -741,18 +759,11 @@ class MainActivity : AppCompatActivity() {
                         updateToolbarSubtitle()
                         
                         withContext(Dispatchers.Main) {
-                            Toast.makeText(
-                                this@MainActivity,
-                                "Call data sent successfully: ${lastResponse?.body()?.message}",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                            showCustomToast("Call data sent successfully: ${lastResponse?.body()?.message}")
+                              
                         }
                     } else {
-                        Toast.makeText(
-                            this@MainActivity,
-                            "Failed to send call data: ${lastResponse?.code()}",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        showCustomToast("Failed to send call data: ${lastResponse?.code()}")
                     }
                 }
             }
@@ -761,11 +772,7 @@ class MainActivity : AppCompatActivity() {
                     // Dismiss progress dialog
                     progressDialog.dismiss()
                     
-                    Toast.makeText(
-                        this@MainActivity,
-                        "Error: ${e.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    showCustomToast( "Error: ${e.message}")
                 }
             }
         }
@@ -797,7 +804,7 @@ class MainActivity : AppCompatActivity() {
                 
                 if (unsyncedCalls.isEmpty()) {
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(this@MainActivity, "No unsynced calls found", Toast.LENGTH_SHORT).show()
+                     showCustomToast("No unsynced calls found")
                     }
                     progressDialog.dismiss()
                 } else {
@@ -850,18 +857,10 @@ class MainActivity : AppCompatActivity() {
                             updateToolbarSubtitle()
                             
                             withContext(Dispatchers.Main) {
-                                Toast.makeText(
-                                    this@MainActivity,
-                                    "Call data sent successfully: ${lastResponse?.body()?.message}",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                               showCustomToast("Call data sent successfully: ${lastResponse?.body()?.message}")
                             }
                         } else {
-                            Toast.makeText(
-                                this@MainActivity,
-                                "Failed to send call data: ${lastResponse?.code()}",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                           showCustomToast("Failed to send call data: ${lastResponse?.code()}")
                         }
                     }
                 }
@@ -870,11 +869,8 @@ class MainActivity : AppCompatActivity() {
                     // Dismiss progress dialog
                     progressDialog.dismiss()
                     
-                    Toast.makeText(
-                        this@MainActivity,
-                        "Error: ${e.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    showCustomToast("Error: ${e.message}")
+                  
                 }
             }
         }
@@ -912,6 +908,79 @@ class MainActivity : AppCompatActivity() {
             customerName.contains(searchQuery) ||
             phoneNumber.contains(searchQuery) ||
             description.contains(searchQuery)
+        }
+    }
+
+    private fun showCustomToast(message: String, iconResId: Int = R.drawable.ic_info) {
+        val inflater = layoutInflater
+        val layout = inflater.inflate(R.layout.custom_toast, null)
+        
+        val text = layout.findViewById<TextView>(R.id.toast_text)
+        val icon = layout.findViewById<ImageView>(R.id.toast_icon)
+        
+        text.text = message
+        icon.setImageResource(iconResId)
+        
+        val toast = Toast(applicationContext)
+        toast.setGravity(Gravity.CENTER_VERTICAL or Gravity.BOTTOM, 0, 100)
+        toast.duration = Toast.LENGTH_SHORT
+        toast.view = layout
+        toast.show()
+    }
+
+    private fun showIssueFilterDialog() {
+        Log.d("MainActivity", "Starting showIssueFilterDialog")
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                Log.d("MainActivity", "Inside coroutine")
+                val issues = database.issueDao().getAllIssues().first()
+                Log.d("MainActivity", "Collected ${issues.size} issues")
+
+                withContext(Dispatchers.Main) {
+                    Log.d("MainActivity", "Creating dialog")
+                    val dialogView = layoutInflater.inflate(R.layout.dialog_issue_filter, null)
+                    val spinner = dialogView.findViewById<AutoCompleteTextView>(R.id.issueSpinner)
+                    
+                    // Create adapter for spinner
+                    val spinnerAdapter = ArrayAdapter(
+                        this@MainActivity,
+                        R.layout.dropdown_item,
+                        issues.map { it.issueName }
+                    )
+                    spinner.setAdapter(spinnerAdapter)
+
+                    val builder = AlertDialog.Builder(this@MainActivity, R.style.CustomDialog)
+                        .setTitle("Filter by Issue")
+                        .setView(dialogView)
+                        .setPositiveButton("Filter") { _, _ ->
+                            val selectedPosition = spinnerAdapter.getPosition(spinner.text.toString())
+                            if (selectedPosition != -1) {
+                                Log.d("MainActivity", "Filtering by issue: ${issues[selectedPosition].issueName}")
+                                this@MainActivity.adapter.filterByIssueId(issues[selectedPosition].issueID)
+                                
+                                // Check if filtered results are empty
+                                if (this@MainActivity.adapter.itemCount == 0) {
+                                    showCustomToast("No calls found for this issue", R.drawable.ic_info)
+                                }
+                            }
+                        }
+                        .setNeutralButton("Show All") { _, _ -> 
+                            Log.d("MainActivity", "Showing all calls")
+                            this@MainActivity.adapter.filterByIssueId(null)
+                        }
+                        .setNegativeButton("Cancel", null)
+
+                    val dialog = builder.create()
+                    dialog.window?.setBackgroundDrawableResource(R.drawable.dialog_background)
+                    dialog.show()
+                    Log.d("MainActivity", "Dialog shown")
+                }
+            } catch (e: Exception) {
+                Log.e("MainActivity", "Error showing issue filter dialog", e)
+                withContext(Dispatchers.Main) {
+                    showCustomToast("Error loading issues: ${e.message}", R.drawable.ic_error)
+                }
+            }
         }
     }
 }

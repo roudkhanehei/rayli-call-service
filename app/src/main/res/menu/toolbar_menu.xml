@@ -13,26 +13,34 @@
         android:id="@+id/action_filter"
         android:icon="@drawable/ic_filter"
         android:title="Filter"
-        app:showAsAction="always">
+        app:showAsAction="ifRoom">
         
         <menu>
             <item
                 android:id="@+id/filter_all"
                 android:title="All Calls"
+                android:icon="@drawable/ic_filter_all"
                 app:showAsAction="never" />
             <item
                 android:id="@+id/filter_missed"
                 android:title="Missed Calls"
+                android:icon="@drawable/ic_filter_missed"
                 app:showAsAction="never" />
             <item
                 android:id="@+id/filter_answered"
                 android:title="Answered Calls"
+                android:icon="@drawable/ic_filter_answered"
                 app:showAsAction="never" />
             <item
                 android:id="@+id/filter_outgoing"
                 android:title="Outgoing Calls"
+                android:icon="@drawable/ic_filter_outgoing"
                 app:showAsAction="never" />
-           
+            <item
+                android:id="@+id/filter_by_issue"
+                android:title="Filter by Issue"
+                android:icon="@drawable/ic_filter_issue"
+                app:showAsAction="never" />
         </menu>
     </item>
 

@@ -41,6 +41,7 @@ class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
     private var currentFilter: ((CallEntity) -> Boolean)? = null
     private var currentCallState: String? = null
     private var currentCallDirection: String? = null
+    private var currentIssueId: Long? = null
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
     private var expandedPosition = -1
 
@@ -205,7 +206,7 @@ class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
         val database = AppDatabase.getDatabase(context)
         val issueDao = database.issueDao()
 
-        // Populate issue spinner
+      
         CoroutineScope(Dispatchers.IO).launch {
             val issues = issueDao.getAllIssues().first()
             withContext(Dispatchers.Main) {
@@ -371,13 +372,19 @@ class CallAdapter : RecyclerView.Adapter<CallAdapter.CallViewHolder>() {
         applyFilters()
     }
 
+    fun filterByIssueId(issueId: Long?) {
+        currentIssueId = issueId
+        applyFilters()
+    }
+
     private fun applyFilters() {
         filteredCalls = calls.filter { call ->
             val matchesState = currentCallState == null || call.callState == currentCallState
             val matchesDirection = currentCallDirection == null || call.callDirection == currentCallDirection
+            val matchesIssue = currentIssueId == null || call.issueId == currentIssueId
             val matchesSearch = currentFilter == null || currentFilter!!(call)
             
-            matchesState && matchesDirection && matchesSearch
+            matchesState && matchesDirection && matchesIssue && matchesSearch
         }
         notifyDataSetChanged()
     }
